@@ -1,1 +1,0 @@
-# Study Buddy — Weekly Journals
