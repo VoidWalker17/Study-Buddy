@@ -1,0 +1,6 @@
+{
+  "name": "studybuddy",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.py" }
+  ]
+}
