@@ -75,16 +75,32 @@ def generate_questions_from_concepts(concepts: list) -> list:
     Crucially, these must NOT be simple one-word answer questions. They must be conceptual, analytical, or application-based questions that require at least 2-3 sentences to answer properly.
     The difficulty should be heavily skewed towards 'medium' and 'hard'. Do not include basic definition questions.
     
+    EXTREMELY IMPORTANT CONSTRAINTS:
+    1. DO NOT reuse the same scenario or variables across questions.
+    2. Every single question MUST test a completely different physics/theoretical concept from the provided list.
+    3. Ensure maximum variety in question structure (e.g., use "What if", "Compare and contrast", "Explain why", "Analyze the outcome", etc.).
+    4. Do not simply swap out a word (like "prism" for "grating") to create a new question. Each question must be distinct and uniquely thought-provoking.
+    
     OUTPUT ONLY A VALID JSON OBJECT. NO EXPLANATIONS. NO MARKDOWN OR CONVERSATIONAL TEXT.
     Structure:
     {{"questions": [{{"question": "Complex Q text...", "expectedAnswer": "Detailed 2-3 sentence A text...", "difficulty": "medium/hard", "concepts": ["Concept1"]}}]}}
     Concepts: {concepts_str}
     """
-    result = generate_completion(prompt, response_format_json=True)
+    
+    # We use a higher temperature (0.7) specifically for question generation to force the model to be creative and stop repeating templates.
     try:
+        kwargs = {
+            "model": DEFAULT_MODEL,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.7,
+            "response_format": { "type": "json_object" }
+        }
+        response = client.chat.completions.create(**kwargs)
+        result = response.choices[0].message.content
         parsed = json.loads(clean_json(result))
         return parsed.get("questions", [])
-    except json.JSONDecodeError:
+    except Exception as e:
+        print(f"Error generating questions: {e}")
         return []
 
 def evaluate_answer(question: str, student_answer: str, expected_answer: str) -> dict:
