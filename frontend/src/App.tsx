@@ -4,21 +4,20 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { LandingPage } from './pages/LandingPage';
 import { DashboardPage } from './pages/DashboardPage';
 import StudyTool from './pages/StudyTool';
-import { AuthModal } from './components/AuthModal';
+import { FullScreenSignup } from './components/ui/full-screen-signup';
 
-type AppView = 'landing' | 'dashboard' | 'study';
+type AppView = 'landing' | 'auth' | 'dashboard' | 'study';
 
 function MainRouter() {
   const [view, setView] = useState<AppView>('landing');
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [activeSession, setActiveSession] = useState<any>(null);
 
   const { isAuthenticated, logout } = useAuth();
 
   const handleOpenAuth = (mode: 'login' | 'register' = 'login') => {
-    setAuthMode(mode);
-    setAuthModalOpen(true);
+    setAuthMode(mode === 'register' ? 'signup' : 'login');
+    setView('auth');
   };
 
   const handleStartSession = (sessionData?: any) => {
@@ -39,11 +38,19 @@ function MainRouter() {
             if (isAuthenticated) {
               setView('dashboard');
             } else {
-              setView('study');
+              handleOpenAuth('register');
             }
           }}
           onOpenAuth={handleOpenAuth}
           onGoToDashboard={() => setView('dashboard')}
+        />
+      )}
+
+      {view === 'auth' && (
+        <FullScreenSignup
+          initialMode={authMode}
+          onSuccess={handleAuthSuccess}
+          onBackToHome={() => setView('landing')}
         />
       )}
 
@@ -71,13 +78,6 @@ function MainRouter() {
           onOpenAuth={() => handleOpenAuth('login')}
         />
       )}
-
-      <AuthModal
-        isOpen={authModalOpen}
-        initialMode={authMode}
-        onClose={() => setAuthModalOpen(false)}
-        onSuccess={handleAuthSuccess}
-      />
     </>
   );
 }
