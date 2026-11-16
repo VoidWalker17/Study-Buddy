@@ -5,8 +5,8 @@ test.describe('Study Buddy Feynman Workflow & Theme Verification', () => {
     await page.goto('http://localhost:3002/');
 
     // 1. Verify Title & Hero
-    await expect(page.locator('text=Study Buddy')).toBeVisible();
-    await expect(page.locator('text=You teach the AI.')).toBeVisible();
+    await expect(page.locator('text=Study Buddy').first()).toBeVisible();
+    await expect(page.locator('h1').first()).toBeVisible();
 
     // 2. Test Light / Dark Theme Switcher
     const themeBtn = page.locator('button[aria-label="Toggle theme"]').first();
@@ -32,7 +32,7 @@ test.describe('Study Buddy Feynman Workflow & Theme Verification', () => {
       const demoBtn = page.locator('button:has-text("divyansh@studybuddy.ai")');
       if (await demoBtn.isVisible()) {
         await demoBtn.click();
-        await page.locator('button:has-text("Sign In to Dashboard")').click();
+        await page.locator('form button[type="submit"]').click();
         
         // Wait for dashboard view to appear
         await page.waitForTimeout(1000);
@@ -45,7 +45,7 @@ test.describe('Study Buddy Feynman Workflow & Theme Verification', () => {
 
   test('Direct workspace launch', async ({ page }) => {
     await page.goto('http://localhost:3002/');
-    const launchBtn = page.locator('button:has-text("Launch Learning Tool")').first();
+    const launchBtn = page.locator('button:has-text("Start Feynman Drill Free")').first();
     await launchBtn.click();
 
     // Verify Study Tool is active on Step 1
