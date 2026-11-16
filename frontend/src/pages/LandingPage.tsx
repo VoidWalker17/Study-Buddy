@@ -504,7 +504,7 @@ function Nav({
           {products.length ? (
             <div className="ttl-prod" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
               <button type="button" className="ttl-nav-link" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-                Methodology <Icon d={I.down} size={13} className="ttl-caret" />
+                How It Works <Icon d={I.down} size={13} className="ttl-caret" />
               </button>
               <div className="ttl-prod-panel" data-open={open || undefined}>
                 {products.map((p, i) => (
@@ -1817,8 +1817,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           ],
           links: [
             { label: "Methodology", href: "#features" },
-            { label: "500-Synapse Matrix", href: "#coverage" },
-            { label: "Cognitive Rigor", href: "#pricing" },
+            { label: "Architecture", href: "#coverage" },
+            { label: "Research", href: "#pricing" },
             { label: "Whitepapers", href: "#resources" },
             { label: "FAQ", href: "#faq" },
           ],
@@ -2120,13 +2120,13 @@ const TTL_CSS = `
 .ttl-mask{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.08em;margin-bottom:-.08em}
 .ttl-hero-word{display:inline-block;will-change:transform}
 
-.ttl-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 22px;border-radius:999px;font-size:14px;font-weight:500;white-space:nowrap;transition:transform .25s cubic-bezier(.2,.8,.2,1),background-color .25s,box-shadow .25s,opacity .2s;cursor:pointer}
-.ttl-btn:hover{transform:translateY(-1px)}
-.ttl-btn:active{transform:translateY(0) scale(.98)}
+.ttl-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 22px;border-radius:999px;font-size:14px;font-weight:500;white-space:nowrap;transition:transform .22s cubic-bezier(.16,1,.3,1),background-color .2s,box-shadow .24s cubic-bezier(.16,1,.3,1),opacity .2s;cursor:pointer;user-select:none;-webkit-user-select:none}
+.ttl-btn:hover{transform:translateY(-1.5px)}
+.ttl-btn:active{transform:translateY(0) scale(.96);transition:transform .08s cubic-bezier(.16,1,.3,1)}
 .ttl-btn:disabled{opacity:.6;cursor:default;transform:none}
 .ttl-btn-sm{height:36px;padding:0 16px;font-size:13px}
 .ttl-btn-dark{background:var(--ttl-accent);color:var(--ttl-accent-ink)}
-.ttl-btn-dark:hover{box-shadow:0 10px 24px -12px var(--ttl-accent)}
+.ttl-btn-dark:hover{box-shadow:0 10px 24px -10px var(--ttl-accent)}
 .ttl-btn-lilac{background:var(--ttl-lilac);color:var(--ttl-lilac-ink)}
 .ttl-btn-ghost{border:1px solid var(--ttl-rule);background:var(--ttl-paper)}
 .ttl-btn-glass{background:rgba(255,255,255,.42);color:var(--ttl-ink);border:1px solid rgba(255,255,255,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
@@ -2136,25 +2136,28 @@ const TTL_CSS = `
 
 /* nav */
 .ttl-nav{position:sticky;top:0;z-index:40;transition:background-color .35s,box-shadow .35s,backdrop-filter .35s}
-.ttl-nav[data-scrolled]{background:color-mix(in srgb,var(--ttl-page) 82%,transparent);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);box-shadow:0 1px 0 var(--ttl-rule)}
+.ttl-nav[data-scrolled]{background:color-mix(in srgb,var(--ttl-page) 82%,transparent);backdrop-filter:saturate(1.4) blur(16px);-webkit-backdrop-filter:saturate(1.4) blur(16px);box-shadow:0 1px 0 var(--ttl-rule)}
 .ttl-nav-in{max-width:1200px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;gap:28px;position:relative}
-.ttl-brand{display:inline-flex;align-items:center;gap:10px;font-weight:600;font-size:16px;letter-spacing:-.02em}
+.ttl-brand{display:inline-flex;align-items:center;gap:10px;font-weight:600;font-size:16px;letter-spacing:-.02em;transition:opacity .2s}
+.ttl-brand:hover{opacity:.85}
 .ttl-nav-links{display:flex;align-items:center;gap:6px;flex:1}
-.ttl-nav-link{display:inline-flex;align-items:center;gap:4px;padding:8px 10px;border-radius:8px;font-size:14px;color:var(--ttl-ink);opacity:.82;transition:opacity .2s,background-color .2s;cursor:pointer}
-.ttl-nav-link:hover,.ttl-nav-link[aria-expanded="true"]{opacity:1;background:color-mix(in srgb,var(--ttl-ink) 5%,transparent)}
-.ttl-caret{transition:transform .3s}
+.ttl-nav-link{display:inline-flex;align-items:center;gap:4px;padding:8px 12px;border-radius:10px;font-size:13.5px;font-weight:500;color:var(--ttl-ink);opacity:.82;transition:opacity .18s,background-color .18s,transform .2s cubic-bezier(.16,1,.3,1);cursor:pointer}
+.ttl-nav-link:hover,.ttl-nav-link[aria-expanded="true"]{opacity:1;background:color-mix(in srgb,var(--ttl-ink) 6%,transparent);transform:translateY(-0.5px)}
+.ttl-nav-link:active{transform:scale(0.96)}
+.ttl-caret{transition:transform .3s cubic-bezier(.16,1,.3,1)}
 .ttl-nav-link[aria-expanded="true"] .ttl-caret{transform:rotate(180deg)}
 .ttl-nav-end{display:flex;align-items:center;gap:8px;margin-left:auto}
 .ttl-nav-sep{height:20px;width:1px;background:var(--ttl-rule);margin:0 4px}
 .ttl-prod{position:relative}
-.ttl-prod-panel{position:absolute;top:calc(100% + 8px);left:-12px;width:380px;padding:8px;border-radius:16px;background:var(--ttl-paper);border:1px solid var(--ttl-rule);box-shadow:0 30px 60px -30px rgba(16,41,45,.35);opacity:0;visibility:hidden;transform:translateY(-6px) scale(.98);transform-origin:20% 0;transition:opacity .25s,transform .35s cubic-bezier(.2,.8,.2,1),visibility .25s}
+.ttl-prod-panel{position:absolute;top:calc(100% + 10px);left:-12px;width:390px;padding:10px;border-radius:18px;background:color-mix(in srgb,var(--ttl-paper) 92%,transparent);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid var(--ttl-rule);box-shadow:0 24px 50px -18px rgba(16,41,45,.25),0 0 0 1px rgba(255,255,255,.05);opacity:0;visibility:hidden;transform:translateY(-8px) scale(.96);transform-origin:18% 0;transition:opacity .22s cubic-bezier(.16,1,.3,1),transform .28s cubic-bezier(.16,1,.3,1),visibility .22s}
 .ttl-prod-panel::before{content:"";position:absolute;left:0;right:0;top:-12px;height:12px}
-.ttl-prod-panel[data-open]{opacity:1;visibility:visible;transform:none}
-.ttl-prod-item{display:flex;gap:12px;padding:12px;border-radius:10px;transition:background-color .2s}
-.ttl-prod-item:hover{background:var(--ttl-page)}
+.ttl-prod-panel[data-open]{opacity:1;visibility:visible;transform:translateY(0) scale(1)}
+.ttl-prod-item{display:flex;gap:12px;padding:12px;border-radius:12px;transition:background-color .2s,transform .2s cubic-bezier(.16,1,.3,1)}
+.ttl-prod-item:hover{background:var(--ttl-page);transform:translateX(3px)}
 .ttl-prod-item b{display:block;font-weight:500;font-size:14px}
 .ttl-prod-item small{display:block;font-size:12.5px;color:var(--ttl-muted);line-height:1.4}
-.ttl-prod-ic{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:var(--ttl-page);color:var(--ttl-gold);flex:none}
+.ttl-prod-ic{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:var(--ttl-page);color:var(--ttl-gold);flex:none;transition:transform .2s}
+.ttl-prod-item:hover .ttl-prod-ic{transform:scale(1.08)}
 .ttl-burger{display:none;width:40px;height:40px;place-items:center;border-radius:10px}
 .ttl-sheet{display:none}
 .ttl-progress{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--ttl-gold);transform:scaleX(0);transform-origin:0 50%;opacity:.9}
