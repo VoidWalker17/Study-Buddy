@@ -90,20 +90,6 @@ const PALETTES = {
   },
 }
 
-const DEFAULT_CONCEPTS: TtlConcept[] = [
-  { id: "quantum", name: "Quantum Superposition", kind: "Wavefunction Collapse · Hilbert Space", mastery: 92.4 },
-  { id: "thermo", name: "Entropy & Microstates", kind: "Statistical Mechanics · Boltzmann Law", mastery: 86.1 },
-  { id: "attention", name: "Neural Attention Mechanics", kind: "Transformer Multi-Head Projections", mastery: 83.8 },
-]
-
-const DEFAULT_ACTIVITY: TtlActivity[] = [
-  { id: "a1", date: "Just now", text: "Child Agent asked: 'Why can't wavefunctions collapse backwards?'", concept: "Quantum Superposition", score: 94, status: "Consolidated" },
-  { id: "a2", date: "10m ago", text: "Student explained using double-slit interference analogy", concept: "Quantum Superposition", score: 88, status: "Verified" },
-  { id: "a3", date: "1h ago", text: "Cold Baseline Exam formulated by Teacher Agent (120B)", concept: "Entropy & Microstates", score: 14, status: "Inquiry" },
-  { id: "a4", date: "3h ago", text: "Misconception detected: 'Heat as substance' corrected to kinetic variance", concept: "Entropy & Microstates", score: 82, status: "Consolidated" },
-  { id: "a5", date: "Yesterday", text: "Child Agent scored 91% on Blind Final Examination", concept: "Neural Attention Mechanics", score: 91, status: "Verified" },
-]
-
 const DEFAULT_STATS: TtlStat[] = [
   { value: 4.8, suffix: "x", decimals: 1, label: "Measured conceptual retention factor" },
   { value: 94.2, suffix: "%", decimals: 1, label: "Average post-Feynman final exam score" },
@@ -254,46 +240,6 @@ function formatPercent(n: number, decimals = 1) {
 function formatStat(s: TtlStat, v: number) {
   const d = s.decimals ?? 0
   return (s.prefix ?? "") + v.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }) + (s.suffix ?? "")
-}
-
-function percentages(values: number[]) {
-  const total = values.reduce((a, b) => a + Math.max(0, b), 0)
-  if (!total) return values.map(() => 0)
-  const raw = values.map((v) => (Math.max(0, v) / total) * 100)
-  const out = raw.map(Math.floor)
-  let left = 100 - out.reduce((a, b) => a + b, 0)
-  const order = raw.map((r, i) => [r - Math.floor(r), i]).sort((a, b) => b[0] - a[0] || a[1] - b[1])
-  for (let k = 0; left > 0; k = (k + 1) % order.length, left--) out[order[k][1]]++
-  return out
-}
-
-function mulberry(seed: number) {
-  let a = seed >>> 0
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0
-    let t = a
-    t = Math.imul(t ^ (t >>> 15), t | 1)
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
-
-function series(seed: number, n: number, vol: number, drift: number) {
-  const r = mulberry(seed)
-  const out = [1]
-  for (let i = 1; i < n; i++) out.push(out[i - 1] * (1 + drift + (r() - 0.5) * vol))
-  const last = out[n - 1]
-  return out.map((v) => v / last)
-}
-
-function sparkPath(values: number[], w: number, h: number, pad = 4) {
-  if (values.length < 2) return { line: "", area: "" }
-  const lo = Math.min(...values)
-  const hi = Math.max(...values)
-  const span = hi - lo || 1
-  const pts = values.map((v, i) => [(i / (values.length - 1)) * w, pad + (1 - (v - lo) / span) * (h - pad * 2)])
-  const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join("")
-  return { line, area: line + "L" + w + " " + h + "L0 " + h + "Z" }
 }
 
 function markedWords(text: string) {
@@ -594,410 +540,6 @@ function Nav({
       </div>
       <span className="ttl-progress" aria-hidden="true" />
     </header>
-  )
-}
-
-type View = "overview" | "move" | "activity"
-type Step = "edit" | "review" | "sending" | "done" | "error"
-
-const RANGES = [
-  { label: "10m", seed: 11, vol: 0.022, drift: 0.0018, delta: "+34.2% Immediate" },
-  { label: "24h", seed: 29, vol: 0.04, drift: 0.004, delta: "+68.5% Consolidated" },
-  { label: "30d", seed: 53, vol: 0.06, drift: 0.011, delta: "+91.8% Permanent" },
-]
-const RANGE_SERIES = RANGES.map((r) => series(r.seed, 36, r.vol, r.drift))
-
-function FeynmanStudio(props: {
-  brand: string
-  subject: string
-  concepts: TtlConcept[]
-  activity: TtlActivity[]
-  colors: string[]
-  reduced: boolean
-  onTransmitExplanation: (t: TtlTransfer) => Promise<boolean>
-  onLaunchFullSession: () => void
-}) {
-  const { concepts, activity, colors, reduced } = props
-  const [view, setView] = React.useState("overview" as View)
-  const [range, setRange] = React.useState(1)
-  const [focus, setFocus] = React.useState("" as string)
-  const [from, setFrom] = React.useState(concepts[0]?.id ?? "")
-  const to = "child_buffer"
-  const [explanation, setExplanation] = React.useState("A photon doesn't travel along a single path; instead, it explores every conceivable path simultaneously through quantum phase interference.")
-  const [memo, setMemo] = React.useState("")
-  const [step, setStep] = React.useState("edit" as Step)
-  const [err, setErr] = React.useState("")
-  const [filter, setFilter] = React.useState("all" as "all" | "in" | "out")
-  const [tip, setTip] = React.useState(-1)
-
-  const avgMastery = concepts.reduce((a, b) => a + b.mastery, 0) / (concepts.length || 1)
-  const eased = useTween([avgMastery, ...concepts.map((a) => a.mastery)], reduced, 900)
-  const shares = percentages(concepts.map((a) => a.mastery))
-  const widths = useTween(concepts.map((a) => (avgMastery ? (a.mastery / (avgMastery * concepts.length)) * 100 : 0)), reduced, 900)
-  const spark = useTween(RANGE_SERIES[range], reduced, 700)
-  const path = sparkPath(spark, 300, 84)
-  const gid = React.useId().replace(/:/g, "")
-
-  const fromConcept = concepts.find((c) => c.id === from) || concepts[0]
-
-  const startTeaching = (id?: string) => {
-    if (id) {
-      setFrom(id)
-    }
-    setStep("edit")
-    setErr("")
-    setView("move")
-  }
-
-  const review = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!explanation.trim() || explanation.length < 10) {
-      setErr("Please provide a substantive explanation to test the child agent.")
-      return
-    }
-    setErr("")
-    setStep("review")
-  }
-
-  const confirm = async () => {
-    setStep("sending")
-    const ok = await props.onTransmitExplanation({ from, to, explanation: explanation.trim(), memo: memo.trim() })
-    setStep(ok ? "done" : "error")
-  }
-
-  const reset = () => {
-    setExplanation("")
-    setMemo("")
-    setStep("edit")
-  }
-
-  const quickChips = [
-    { label: "Microstate Analogy", text: "Think of entropy not as 'disorder', but as the logarithm of available microscopic configurations yielding the same macrostate." },
-    { label: "Feynman Path Integral", text: "The classical trajectory emerges purely because stationary action paths interfere constructively, while neighboring non-classical paths cancel out." },
-    { label: "Transformer Attention", text: "Queries and keys compute dot-product alignment matrices that dynamically route contextual information into value vectors." },
-  ]
-
-  const list = activity.filter((a) => (filter === "all" ? true : filter === "in" ? a.status === "Inquiry" : a.status === "Consolidated" || a.status === "Verified"))
-
-  const navItems: { id: View; label: string; d: string }[] = [
-    { id: "overview", label: "Neural State", d: I.brain },
-    { id: "move", label: "Teach Agent", d: I.swap },
-    { id: "activity", label: "Dialogue Stream", d: I.list },
-  ]
-
-  return (
-    <div className="ttl-dash">
-      <aside className="ttl-side">
-        <div className="ttl-side-brand">
-          <BrainMark size={18} />
-          <span>{props.brand} Neural</span>
-        </div>
-        <div className="ttl-side-label">Workspace</div>
-        {navItems.map((n) => (
-          <button key={n.id} type="button" className="ttl-side-item" data-on={view === n.id || undefined} onClick={() => (n.id === "move" ? startTeaching() : setView(n.id))}>
-            <Icon d={n.d} size={14} />
-            {n.label}
-          </button>
-        ))}
-        <div className="ttl-side-label">Active Concepts</div>
-        {concepts.map((a, i) => (
-          <button
-            key={a.id}
-            type="button"
-            className="ttl-side-acc"
-            data-on={(view === "overview" && focus === a.id) || undefined}
-            onClick={() => {
-              setView("overview")
-              setFocus((f) => (f === a.id ? "" : a.id))
-            }}
-          >
-            <i style={{ background: colors[i % colors.length] }} />
-            <span>{a.name}</span>
-            <small>{formatPercent(eased[i + 1] ?? a.mastery)}</small>
-          </button>
-        ))}
-        <div className="ttl-side-foot">
-          <Icon d={I.doc} size={14} /> Course Ontology
-        </div>
-      </aside>
-
-      <div className="ttl-main">
-        <div className="ttl-crumbs">
-          <span>Neural Studio</span>
-          <span aria-hidden="true">/</span>
-          <b>{props.subject}</b>
-          <span className="ttl-live">
-            <i /> Live LPU Inference
-          </span>
-        </div>
-        <div className="ttl-tabs-sm" role="tablist" aria-label="Dashboard views">
-          {navItems.map((n) => (
-            <button key={n.id} type="button" role="tab" aria-selected={view === n.id} onClick={() => (n.id === "move" ? startTeaching() : setView(n.id))}>
-              {n.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="ttl-view" key={view}>
-          {view === "overview" ? (
-            <>
-              <div className="ttl-ov-head">
-                <div>
-                  <h3 className="ttl-h3">Neural Retention State</h3>
-                  <div className="ttl-k">Teaching Efficiency Score (TES)</div>
-                  <div className="ttl-total">{formatPercent(eased[0])}</div>
-                  <div className="ttl-delta">
-                    <span>{RANGES[range].delta}</span> vs. Cold Baseline Exam
-                  </div>
-                </div>
-                <div className="ttl-spark">
-                  <div className="ttl-seg" role="tablist" aria-label="Range">
-                    {RANGES.map((r, i) => (
-                      <button key={r.label} type="button" role="tab" aria-selected={range === i} onClick={() => setRange(i)}>
-                        {r.label}
-                      </button>
-                    ))}
-                  </div>
-                  <svg className="ttl-svg ttl-spark-svg" viewBox="0 0 300 84" width="300" height="84" preserveAspectRatio="none" aria-hidden="true">
-                    <defs>
-                      <linearGradient id={gid + "a"} x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="0" stopColor="var(--ttl-gold)" stopOpacity="0.28" />
-                        <stop offset="1" stopColor="var(--ttl-gold)" stopOpacity="0" />
-                      </linearGradient>
-                    </defs>
-                    <path d={path.area} fill={"url(#" + gid + "a)"} />
-                    <path d={path.line} fill="none" stroke="var(--ttl-gold)" strokeWidth="1.6" vectorEffect="non-scaling-stroke" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ttl-accs">
-                {concepts.map((a, i) => (
-                  <button key={a.id} type="button" className="ttl-acc" data-on={focus === a.id || undefined} data-dim={(focus && focus !== a.id) || undefined} onClick={() => startTeaching(a.id)} aria-label={"Teach " + a.name}>
-                    <span className="ttl-acc-top">
-                      <i style={{ background: colors[i % colors.length] }} />
-                      {a.name}
-                      <Icon d={I.arrow} size={13} className="ttl-acc-go" />
-                    </span>
-                    <span className="ttl-acc-bal">{formatPercent(eased[i + 1] ?? a.mastery)}</span>
-                    <span className="ttl-acc-kind">{a.kind}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="ttl-recent">
-                <div className="ttl-recent-head">
-                  <b>Pedagogical Dialogue Stream</b>
-                  <button type="button" className="ttl-link" onClick={() => setView("activity")}>
-                    View transcript
-                  </button>
-                </div>
-                {activity.slice(0, 3).map((a) => (
-                  <div key={a.id} className="ttl-recent-row">
-                    <span className="ttl-led-date">{a.date}</span>
-                    <span className="ttl-recent-text">{a.text}</span>
-                    <span className="ttl-led-amt" data-in={a.status === "Verified" || undefined}>
-                      {a.status === "Verified" ? "Verified" : a.status === "Consolidated" ? "+Depth" : "Question"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <div className="ttl-break">
-                <div className="ttl-break-head">
-                  <b>Cognitive Mastery Breakdown</b>
-                  <span>Intuitive Analogy (42%) · Mathematical Rigor (38%) · Boundary Resilience (20%)</span>
-                </div>
-                <div className="ttl-bar" onMouseLeave={() => setTip(-1)}>
-                  {concepts.map((a, i) => (
-                    <span
-                      key={a.id}
-                      tabIndex={0}
-                      onMouseEnter={() => setTip(i)}
-                      onFocus={() => setTip(i)}
-                      onBlur={() => setTip(-1)}
-                      data-dim={(focus && focus !== a.id) || undefined}
-                      style={{ width: widths[i] + "%", background: colors[i % colors.length] }}
-                      aria-label={a.name + " " + shares[i] + "%"}
-                    />
-                  ))}
-                  {tip >= 0 && concepts[tip] ? (
-                    <em className="ttl-tip" style={{ left: clamp(widths.slice(0, tip).reduce((x, y) => x + y, 0) + widths[tip] / 2, 12, 88) + "%" }}>
-                      {concepts[tip].name} · {formatPercent(concepts[tip].mastery)} Mastery
-                    </em>
-                  ) : null}
-                </div>
-                <div className="ttl-legend">
-                  {concepts.map((a, i) => (
-                    <span key={a.id}>
-                      <i style={{ background: colors[i % colors.length] }} />
-                      {shares[i]}% {a.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </>
-          ) : view === "move" ? (
-            <div className="ttl-move">
-              <h3 className="ttl-h3">Teach Child Agent (Active Feynman Transfer)</h3>
-              {step === "edit" || step === "error" ? (
-                <form className="ttl-form" onSubmit={review} noValidate>
-                  <div className="ttl-pick">
-                    <div className="ttl-pick-col">
-                      <div className="ttl-k">Concept Source</div>
-                      {concepts.map((a) => (
-                        <button key={a.id} type="button" className="ttl-pill" aria-pressed={from === a.id} onClick={() => setFrom(a.id)}>
-                          {a.name}
-                          <small>{formatPercent(a.mastery)}</small>
-                        </button>
-                      ))}
-                    </div>
-                    <div className="ttl-swap-icon">
-                      <Icon d={I.arrow} size={16} />
-                    </div>
-                    <div className="ttl-pick-col">
-                      <div className="ttl-k">Child Agent Target</div>
-                      <div className="ttl-pill" aria-pressed="true">
-                        Isolated 20B Neural Memory
-                        <small>Air-Gapped</small>
-                      </div>
-                    </div>
-                  </div>
-                  <label className="ttl-field">
-                    <span className="ttl-k">Your Explanation (No Jargon Allowed)</span>
-                    <textarea
-                      rows={3}
-                      className="ttl-explain-area"
-                      placeholder="Explain this concept in simple, intuitive terms as if teaching a beginner..."
-                      value={explanation}
-                      onChange={(e) => setExplanation(e.target.value)}
-                    />
-                  </label>
-                  <div className="ttl-chips">
-                    {quickChips.map((c) => (
-                      <button key={c.label} type="button" onClick={() => setExplanation(c.text)}>
-                        {c.label}
-                      </button>
-                    ))}
-                  </div>
-                  <input className="ttl-memo" placeholder="Clarification tag (e.g. Phase cancellation analog)" value={memo} maxLength={60} onChange={(e) => setMemo(e.target.value)} />
-                  {err || step === "error" ? (
-                    <p className="ttl-err" role="alert">
-                      {err || "Transmission dropped. Check your explanation length."}
-                    </p>
-                  ) : null}
-                  <button type="submit" className="ttl-btn ttl-btn-dark">
-                    Transmit Explanation <Icon d={I.arrow} size={15} />
-                  </button>
-                </form>
-              ) : (
-                <div className="ttl-review" aria-live="polite">
-                  <div className="ttl-route">
-                    <span>{fromConcept.name}</span>
-                    <svg className="ttl-svg ttl-route-line" width="80" height="12" viewBox="0 0 80 12" aria-hidden="true">
-                      <path d="M2 6h74M70 1l6 5-6 5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                    </svg>
-                    <span>Child Agent Neural Synapse</span>
-                  </div>
-                  <div className="ttl-review-amt">Transmitting Concept...</div>
-                  <dl className="ttl-dl">
-                    <div>
-                      <dt>Cognitive Model</dt>
-                      <dd>Isolated 20B Blank-Slate Learner</dd>
-                    </div>
-                    <div>
-                      <dt>Predicted TES Delta</dt>
-                      <dd>+18.4% Retention Boost</dd>
-                    </div>
-                    <div>
-                      <dt>Teacher Verification</dt>
-                      <dd>Flagship 120B Blind Evaluation</dd>
-                    </div>
-                  </dl>
-                  {step === "done" ? (
-                    <div className="ttl-done">
-                      <span className="ttl-done-ic">
-                        <Icon d={I.check} size={16} stroke={2.2} />
-                      </span>
-                      Knowledge Consolidated into Child Agent Memory!
-                      <button type="button" className="ttl-link" onClick={reset}>
-                        Teach another concept
-                      </button>
-                      <button type="button" className="ttl-link" onClick={() => setView("overview")}>
-                        View neural retention state
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="ttl-row">
-                      <button type="button" className="ttl-btn ttl-btn-ghost" onClick={() => setStep("edit")} disabled={step === "sending"}>
-                        Edit Explanation
-                      </button>
-                      <button type="button" className="ttl-btn ttl-btn-dark" onClick={confirm} disabled={step === "sending"} data-busy={step === "sending" || undefined}>
-                        {step === "sending" ? "Processing on Groq LPU…" : "Confirm Neural Ingestion"}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="ttl-act">
-              <div className="ttl-act-head">
-                <h3 className="ttl-h3">Pedagogical Dialogue & Inquiries</h3>
-                <div className="ttl-seg" role="tablist" aria-label="Filter">
-                  {(["all", "in", "out"] as const).map((f) => (
-                    <button key={f} type="button" role="tab" aria-selected={filter === f} onClick={() => setFilter(f)}>
-                      {f === "all" ? "All" : f === "in" ? "Child Inquiries" : "Teacher Verified"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <ul className="ttl-ledger">
-                {list.map((a) => (
-                  <li key={a.id}>
-                    <span className="ttl-led-date">{a.date}</span>
-                    <span className="ttl-led-text">
-                      {a.text}
-                      <small>{a.concept}</small>
-                    </span>
-                    <span className="ttl-led-status" data-s={a.status}>
-                      {a.status}
-                    </span>
-                    <span className="ttl-led-amt" data-in={a.status === "Verified" || undefined}>
-                      {a.score}% TES
-                    </span>
-                  </li>
-                ))}
-                {!list.length ? <li className="ttl-led-empty">Nothing in this filter yet.</li> : null}
-              </ul>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function FlowCard({ title, score, note, from, to, flash }: { title: string; score: string; note?: string; from: string; to: string; flash?: number }) {
-  return (
-    <div className="ttl-flow" key={flash}>
-      <div className="ttl-flow-top">
-        <span>{title}</span>
-        <b>{score}</b>
-        {note ? <em>{note}</em> : null}
-      </div>
-      <div className="ttl-flow-row">
-        <span className="ttl-flow-chip">
-          <i />
-          {from}
-        </span>
-        <svg className="ttl-svg ttl-flow-arrow" width="44" height="10" viewBox="0 0 44 10" aria-hidden="true">
-          <path d="M1 5h38" />
-          <path d="M35 1l4 4-4 4" />
-        </svg>
-        <span className="ttl-flow-chip ttl-flow-chip-b">
-          <i />
-          {to}
-        </span>
-      </div>
-    </div>
   )
 }
 
@@ -1598,15 +1140,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const reduced = useReduced()
   const rootRef = React.useRef(null as HTMLDivElement | null)
   const sentinelRef = React.useRef(null as HTMLSpanElement | null)
-
-  const [concepts, setConcepts] = React.useState(DEFAULT_CONCEPTS)
-  const [activity, setActivity] = React.useState(DEFAULT_ACTIVITY)
-  const [last, setLast] = React.useState({
-    score: "14.0% Baseline",
-    from: "Teacher 120B",
-    to: "Child Agent 20B",
-    n: 0,
-  })
   const [scrolled, setScrolled] = React.useState(false)
   const [feat, setFeat] = React.useState(0)
   const [ctaSignal, setCtaSignal] = React.useState(0)
@@ -1635,41 +1168,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     },
     [reduced],
   )
-
-  const handleTransmitExplanation = React.useCallback(
-    async (t: TtlTransfer) => {
-      await new Promise((r) => setTimeout(r, 850))
-      if (!alive.current) return false
-      setConcepts((prev) =>
-        prev.map((c) =>
-          c.id === t.from ? { ...c, mastery: Math.min(99.4, Math.round((c.mastery + 3.8) * 10) / 10) } : c
-        )
-      )
-      const d = new Date()
-      const date = "Just now"
-      const conceptName = concepts.find((c) => c.id === t.from)?.name || "Quantum Concept"
-      setActivity((list) => [
-        {
-          id: "act_" + d.getTime(),
-          date,
-          text: `Explanation transmitted: "${t.explanation.slice(0, 56)}..."`,
-          concept: conceptName,
-          score: 95,
-          status: "Consolidated",
-        },
-        ...list,
-      ])
-      setLast({
-        score: "92.5% Final",
-        from: conceptName,
-        to: "Child Agent 20B",
-        n: last.n + 1,
-      })
-      return true
-    },
-    [concepts, last.n]
-  )
-
   React.useEffect(() => {
     const el = sentinelRef.current
     if (!el || typeof IntersectionObserver === "undefined") return
@@ -1873,41 +1371,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
         <div className="ttl-device-wrap">
           <div className="ttl-device">
-            <div className="ttl-device-bezel">
-              <FeynmanStudio
-                brand="Study Buddy"
-                subject="Advanced Quantum Mechanics • PHYS 401"
-                concepts={concepts}
-                activity={activity}
-                colors={colors}
-                reduced={reduced}
-                onTransmitExplanation={handleTransmitExplanation}
-                onLaunchFullSession={onStart}
-              />
-            </div>
-          </div>
-          <div className="ttl-floats" aria-live="polite">
-            <div className="ttl-float">
-              <div className="ttl-float-in">
-                <FlowCard
-                  title="Cold Baseline Examination"
-                  score="14.0% Score"
-                  note="Zero Document Leakage"
-                  from="Teacher Agent (120B)"
-                  to="Child Agent (20B)"
-                  flash={last.n}
+            <div className="ttl-hero-showcase">
+              <div className="ttl-hero-img-card">
+                <img
+                  src="/assets/hero-feynman-desk.jpg"
+                  srcSet="/assets/hero-feynman-desk.jpg 1x, /assets/hero-feynman-desk@2x.jpg 2x"
+                  alt="Learn smarter. Achieve more. Master concepts through the Feynman method — explain, understand, and never forget."
+                  className="ttl-hero-img"
+                  loading="eager"
                 />
-              </div>
-            </div>
-            <div className="ttl-float ttl-float-2">
-              <div className="ttl-float-in">
-                <FlowCard
-                  title="Teacher Agent Verification"
-                  score="92.5% Final"
-                  note="+78.5% Net Delta (TES)"
-                  from="Final Blind Exam"
-                  to="Mastery Certified"
-                />
+                <div className="ttl-hero-img-pill">
+                  <span className="ttl-hero-pill-dot" />
+                  <span>The Feynman Protocol • Explain Simply to Master</span>
+                </div>
               </div>
             </div>
           </div>
@@ -2169,8 +1645,14 @@ const TTL_CSS = `
 .ttl-hero-head{display:flex;flex-direction:column;align-items:center;text-align:center}
 .ttl-hero-text{max-width:620px;margin-top:22px;font-size:17px;color:var(--ttl-muted);line-height:1.6}
 .ttl-hero-ctas{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap;justify-content:center}
-.ttl-device-wrap{position:relative;max-width:1080px;margin:64px auto 0;padding:0 24px;perspective:1800px}
+.ttl-device-wrap{position:relative;max-width:1080px;margin:54px auto 0;padding:0 24px;perspective:1800px}
 .ttl-device{transform-origin:50% 100%;will-change:transform}
+.ttl-hero-showcase{position:relative;max-width:880px;margin:0 auto}
+.ttl-hero-img-card{position:relative;border-radius:28px;overflow:hidden;border:1px solid var(--ttl-rule);background:var(--ttl-card);box-shadow:0 30px 70px -15px rgba(15,50,56,0.18),0 1px 3px rgba(15,50,56,0.06);transition:transform 0.4s cubic-bezier(0.16,1,0.3,1),box-shadow 0.4s ease}
+.ttl-hero-img-card:hover{transform:translateY(-4px);box-shadow:0 38px 80px -16px rgba(15,50,56,0.24),0 1px 3px rgba(15,50,56,0.08)}
+.ttl-hero-img{width:100%;height:auto;display:block;object-fit:cover;aspect-ratio:959/1024;max-height:640px;object-position:center top}
+.ttl-hero-img-pill{position:absolute;bottom:24px;left:24px;display:flex;align-items:center;gap:10px;padding:10px 18px;border-radius:999px;background:rgba(15,50,56,0.88);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.16);color:#fff;font-size:13px;font-weight:500;box-shadow:0 10px 25px rgba(0,0,0,0.22);letter-spacing:-0.01em}
+.ttl-hero-pill-dot{width:8px;height:8px;border-radius:50%;background:#c2983b;box-shadow:0 0 10px #c2983b}
 .ttl-device-bezel{border-radius:22px;padding:10px;background:linear-gradient(160deg,#1b1f22,#0b0d0e);box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 50px 100px -40px rgba(16,41,45,.55),0 20px 40px -30px rgba(16,41,45,.4)}
 .ttl-floats{position:absolute;inset:0;z-index:3;pointer-events:none}
 .ttl-float{position:absolute;right:-28px;top:-36px}
