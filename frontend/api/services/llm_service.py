@@ -3,19 +3,37 @@ import json
 from openai import OpenAI
 
 # ---------------------------------------------------------
-# FILL IN YOUR CLOUD LLM DETAILS HERE
-# Example for NVIDIA NIM: 
-#   BASE_URL = "https://integrate.api.nvidia.com/v1"
-#   API_KEY = "nvapi-..." 
-#   MODEL_NAME = "meta/llama3-70b-instruct"
-# Example for Gemini API (OpenAI compatible endpoint):
-#   BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
-#   API_KEY = "your-gemini-api-key"
-#   MODEL_NAME = "gemini-1.5-pro"
+# Load .env file automatically if present
 # ---------------------------------------------------------
-LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "http://localhost:11434/v1")
-LLM_API_KEY = os.environ.get("LLM_API_KEY", "ollama") # Ollama doesn't need an API key, but openai client requires something
-DEFAULT_MODEL = os.environ.get("LLM_MODEL", "llama3.1")
+def _load_env():
+    env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
+    if os.path.exists(env_path):
+        with open(env_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, val = line.split("=", 1)
+                    os.environ.setdefault(key.strip(), val.strip().strip('"').strip("'"))
+
+_load_env()
+
+# Configure Provider: Groq Cloud (Default when GROQ_API_KEY set) with Ollama fallback
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+
+if GROQ_API_KEY and GROQ_API_KEY.startswith("gsk_"):
+    LLM_BASE_URL = "https://api.groq.com/openai/v1"
+    LLM_API_KEY = GROQ_API_KEY
+    TEACHER_MODEL = os.environ.get("TEACHER_MODEL", "openai/gpt-oss-120b")
+    CHILD_MODEL = os.environ.get("CHILD_MODEL", "openai/gpt-oss-20b")
+    DEFAULT_MODEL = TEACHER_MODEL
+    print("Using Groq Cloud Inference (Teacher: 120B Flagship | Child: 20B Lightweight)")
+else:
+    LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "http://localhost:11434/v1")
+    LLM_API_KEY = os.environ.get("LLM_API_KEY", "ollama")
+    TEACHER_MODEL = "llama3.1"
+    CHILD_MODEL = "llama3.1"
+    DEFAULT_MODEL = "llama3.1"
+    print("Using Local Ollama Inference (Llama 3.1)")
 
 client = OpenAI(
     api_key=LLM_API_KEY,
@@ -24,7 +42,6 @@ client = OpenAI(
 
 def clean_json(text: str) -> str:
     """Removes markdown code blocks to ensure valid JSON."""
-    print("RAW LLM OUTPUT:", text)
     text = text.strip()
     if text.startswith("```json"):
         text = text[7:]
@@ -32,17 +49,15 @@ def clean_json(text: str) -> str:
         text = text[3:]
     if text.endswith("```"):
         text = text[:-3]
-    cleaned = text.strip()
-    print("CLEANED JSON OUTPUT:", cleaned)
-    return cleaned
+    return text.strip()
 
-def generate_completion(prompt: str, model: str = DEFAULT_MODEL, response_format_json: bool = False) -> str:
-    """Generates a completion from the configured cloud LLM."""
+def generate_completion(prompt: str, model: str = DEFAULT_MODEL, response_format_json: bool = False, temperature: float = 0.2) -> str:
+    """Generates a completion from Groq Cloud or local Ollama."""
     try:
         kwargs = {
             "model": model,
             "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.2
+            "temperature": temperature
         }
         
         if response_format_json:
@@ -51,7 +66,7 @@ def generate_completion(prompt: str, model: str = DEFAULT_MODEL, response_format
         response = client.chat.completions.create(**kwargs)
         return response.choices[0].message.content
     except Exception as e:
-        print(f"Error calling Cloud LLM: {e}")
+        print(f"Error calling LLM: {e}")
         return ""
 
 def extract_concepts_from_text(text: str) -> dict:
@@ -87,16 +102,9 @@ def generate_questions_from_concepts(concepts: list) -> list:
     Concepts: {concepts_str}
     """
     
-    # We use a higher temperature (0.7) specifically for question generation to force the model to be creative and stop repeating templates.
+    # Use higher temperature (0.7) for diverse questions
+    result = generate_completion(prompt, response_format_json=True, temperature=0.7)
     try:
-        kwargs = {
-            "model": DEFAULT_MODEL,
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.7,
-            "response_format": { "type": "json_object" }
-        }
-        response = client.chat.completions.create(**kwargs)
-        result = response.choices[0].message.content
         parsed = json.loads(clean_json(result))
         return parsed.get("questions", [])
     except Exception as e:

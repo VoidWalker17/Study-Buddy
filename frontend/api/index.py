@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.routers import ml_routes
+from api.routers import ml_routes, auth_routes, session_routes
 
-app = FastAPI(title="Study Buddy ML Service")
+app = FastAPI(title="Study Buddy Neural Service")
 
 app.add_middleware(
     CORSMiddleware,
@@ -13,7 +13,9 @@ app.add_middleware(
 )
 
 app.include_router(ml_routes.router)
+app.include_router(auth_routes.router)
+app.include_router(session_routes.router)
 
 @app.get("/")
 def health_check():
-    return {"status": "ok", "service": "study-buddy-ml"}
+    return {"status": "ok", "service": "study-buddy-neural-service"}

@@ -4,3 +4,4 @@ pydantic
 openai
 PyPDF2
 python-multipart
+psycopg2-binary

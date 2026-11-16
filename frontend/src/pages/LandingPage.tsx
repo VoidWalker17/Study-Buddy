@@ -1,70 +1,119 @@
 import React, { useEffect, useRef } from 'react';
 import { ReactLenis } from 'lenis/react';
-import { Canvas } from '@react-three/fiber';
-import { Float, MeshDistortMaterial, Icosahedron } from '@react-three/drei';
+import * as THREE from 'three';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ArrowRight, BookOpen, Mic, Brain, Lock, LockKeyhole, Cpu } from 'lucide-react';
+import { ArrowRight, BookOpen, Brain, LockKeyhole, Cpu, LogIn, LayoutDashboard } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 gsap.registerPlugin(ScrollTrigger);
 
 interface LandingPageProps {
   onStart: () => void;
+  onOpenAuth: (mode?: 'login' | 'register') => void;
+  onGoToDashboard: () => void;
 }
 
-const Hero3D = () => (
-  <div className="absolute inset-0 z-0 pointer-events-none opacity-60">
-    <Canvas camera={{ position: [0, 0, 5] }}>
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[10, 10, 5]} intensity={1} />
-      <directionalLight position={[-10, -10, -5]} intensity={0.5} color="#444" />
-      <Float speed={2} rotationIntensity={2} floatIntensity={2}>
-        <Icosahedron args={[1.5, 4]} position={[0, 0, 0]}>
-          <MeshDistortMaterial
-            color="#ffffff"
-            attach="material"
-            distort={0.4}
-            speed={2}
-            roughness={0.2}
-            metalness={0.8}
-            wireframe={true}
-          />
-        </Icosahedron>
-      </Float>
-    </Canvas>
-  </div>
-);
+const Hero3D = ({ isDark }: { isDark: boolean }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+    camera.position.z = 4.5;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const geometry = new THREE.IcosahedronGeometry(1.6, 2);
+    const material = new THREE.MeshStandardMaterial({
+      color: isDark ? 0x93c5fd : 0x2563eb,
+      wireframe: true,
+      roughness: 0.3,
+      metalness: 0.8
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, isDark ? 0.8 : 1.5);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, isDark ? 1.5 : 2.0);
+    dirLight.position.set(5, 5, 5);
+    scene.add(dirLight);
+
+    let animationFrameId: number;
+    let clock = new THREE.Clock();
+
+    const animate = () => {
+      animationFrameId = requestAnimationFrame(animate);
+      const elapsedTime = clock.getElapsedTime();
+      mesh.rotation.x = elapsedTime * 0.15;
+      mesh.rotation.y = elapsedTime * 0.25;
+      mesh.position.y = Math.sin(elapsedTime * 0.8) * 0.1;
+      renderer.render(scene, camera);
+    };
+    animate();
+
+    const handleResize = () => {
+      if (!canvas) return;
+      camera.aspect = canvas.clientWidth / canvas.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+    };
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener('resize', handleResize);
+      geometry.dispose();
+      material.dispose();
+      renderer.dispose();
+    };
+  }, [isDark]);
+
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none opacity-40 z-0" />;
+};
+
+export const LandingPage: React.FC<LandingPageProps> = ({
+  onStart,
+  onOpenAuth,
+  onGoToDashboard
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { isAuthenticated, user } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   
   useEffect(() => {
     if (!containerRef.current) return;
     
     const ctx = gsap.context(() => {
-      // Hero Animation
       gsap.from('.hero-text', {
-        y: 100,
+        y: 80,
         opacity: 0,
-        duration: 1,
-        stagger: 0.2,
-        ease: 'power4.out',
+        duration: 0.9,
+        stagger: 0.15,
+        ease: 'power3.out',
       });
       
-      // Reveal Animations
       gsap.utils.toArray('.reveal-up').forEach((el: any) => {
         gsap.from(el, {
           scrollTrigger: {
             trigger: el,
             start: 'top 85%',
           },
-          y: 50,
+          y: 40,
           opacity: 0,
           duration: 0.8,
           ease: 'power3.out'
         });
       });
-      
     }, containerRef);
     
     return () => ctx.revert();
@@ -72,149 +121,225 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
 
   return (
     <ReactLenis root>
-      <div ref={containerRef} className="bg-[#0a0a0a] min-h-screen text-white font-sans overflow-hidden">
+      <div
+        ref={containerRef}
+        className={`min-h-screen font-sans overflow-hidden transition-colors duration-300 ${
+          isDark ? 'bg-[#0a0a0c] text-white' : 'bg-slate-50 text-slate-900'
+        }`}
+      >
         {/* Navbar */}
-        <nav className="fixed top-0 w-full z-50 p-6 flex justify-between items-center backdrop-blur-md bg-[#0a0a0a]/50 border-b border-white/5">
-          <div className="text-xl font-bold tracking-tighter flex items-center gap-2">
-            <Brain className="w-6 h-6 text-zinc-300" />
-            Study Buddy AI
+        <nav
+          className={`fixed top-0 w-full z-50 px-6 sm:px-10 py-4 flex justify-between items-center backdrop-blur-md border-b transition-colors ${
+            isDark
+              ? 'bg-[#0a0a0c]/80 border-white/5'
+              : 'bg-white/80 border-slate-200 shadow-sm shadow-slate-100'
+          }`}
+        >
+          <div className="text-xl font-bold tracking-tight flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white">
+              <Brain className="w-4 h-4" />
+            </div>
+            <span>Study Buddy</span>
           </div>
-          <button 
-            onClick={onStart}
-            className="px-5 py-2 bg-white text-black font-medium rounded-full hover:scale-105 transition-transform"
-          >
-            Get Started
-          </button>
+
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+
+            {isAuthenticated ? (
+              <button
+                onClick={onGoToDashboard}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                  isDark
+                    ? 'bg-zinc-800 hover:bg-zinc-700 text-white'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
+                }`}
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span>Dashboard ({user?.name?.split(' ')[0]})</span>
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => onOpenAuth('login')}
+                  className={`hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                    isDark
+                      ? 'hover:bg-white/10 text-zinc-300 hover:text-white'
+                      : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Sign In</span>
+                </button>
+                <button
+                  onClick={() => onOpenAuth('register')}
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-all shadow-md shadow-blue-500/20 active:scale-95 cursor-pointer"
+                >
+                  Get Started
+                </button>
+              </>
+            )}
+          </div>
         </nav>
 
         {/* Hero */}
-        <section className="relative min-h-screen flex items-center justify-center pt-20">
-          <Hero3D />
-          {/* Subtle background gradient to ensure it's not totally black behind the hero */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.03)_0%,rgba(0,0,0,0)_70%)] pointer-events-none" />
+        <section className="relative min-h-screen flex items-center justify-center pt-24 px-6">
+          <Hero3D isDark={isDark} />
           
-          <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
-            <div className="inline-block mb-4 px-3 py-1 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm hero-text">
-              <span className="text-sm font-medium text-zinc-300">The Feynman Technique, Automated</span>
+          <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6">
+            <div className="inline-block hero-text">
+              <div
+                className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold border backdrop-blur-sm ${
+                  isDark
+                    ? 'border-white/10 bg-white/5 text-zinc-300'
+                    : 'border-slate-200 bg-white text-slate-700 shadow-sm'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                <span>The Automated Feynman Technique</span>
+              </div>
             </div>
-            <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[1.1] hero-text">
+
+            <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter leading-[1.08] hero-text">
               You teach the AI.<br />
-              <span className="text-zinc-400">It takes the exam.</span>
+              <span className={isDark ? 'text-zinc-500' : 'text-blue-600'}>It takes the exam.</span>
             </h1>
-            <p className="text-xl md:text-2xl text-zinc-400 mb-12 max-w-2xl mx-auto hero-text font-light">
-              Master any material by explaining it to a completely blank AI model. 
-              If the AI can pass the exam based only on what you taught it, you truly understand it.
+
+            <p className={`text-lg sm:text-xl md:text-2xl max-w-2xl mx-auto hero-text font-normal leading-relaxed ${
+              isDark ? 'text-zinc-400' : 'text-slate-600'
+            }`}>
+              Master complex topics by teaching a deliberately blank Child Agent. 
+              The system tests its knowledge before and after, verifying your genuine understanding.
             </p>
-            <button 
-              onClick={onStart}
-              className="hero-text group relative inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-black font-semibold text-lg rounded-full overflow-hidden hover:scale-105 transition-transform duration-300"
-            >
-              <span className="relative z-10 flex items-center gap-2">
-                Start Teaching <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </span>
-            </button>
+
+            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4 hero-text">
+              <button 
+                onClick={onStart}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-base rounded-2xl shadow-xl shadow-blue-600/30 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <span>Launch Learning Tool</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+
+              {!isAuthenticated && (
+                <button
+                  onClick={() => onOpenAuth('login')}
+                  className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl font-semibold text-base border transition-all cursor-pointer ${
+                    isDark
+                      ? 'border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-200'
+                      : 'border-slate-200 bg-white hover:bg-slate-100 text-slate-700 shadow-sm'
+                  }`}
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Sign In to Track TES</span>
+                </button>
+              )}
+            </div>
           </div>
         </section>
 
         {/* Boundary Diagram Section */}
-        <section className="py-32 relative border-t border-white/5 bg-gradient-to-b from-[#0a0a0a] to-[#0f0f0f]">
+        <section className={`py-32 relative border-t transition-colors ${
+          isDark
+            ? 'border-white/5 bg-gradient-to-b from-[#0a0a0c] to-[#0f0f14]'
+            : 'border-slate-200 bg-gradient-to-b from-slate-50 to-white'
+        }`}>
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-20 reveal-up">
-              <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">The Information Boundary</h2>
-              <p className="text-xl text-zinc-400 max-w-2xl mx-auto">
-                Strict separation ensures the student model learns <span className="text-white font-medium">only</span> from you.
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 tracking-tight">
+                The Dual-Agent Information Boundary
+              </h2>
+              <p className={`text-base sm:text-lg max-w-2xl mx-auto ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
+                Strict mathematical isolation guarantees the Child Agent learns only from your explanations.
               </p>
             </div>
             
-            <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 reveal-up">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 reveal-up">
               {/* Teacher Model */}
-              <div className="w-full md:w-1/3 p-8 rounded-3xl bg-white/5 border border-white/10 relative overflow-hidden group">
-                <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                <BookOpen className="w-12 h-12 text-zinc-300 mb-6" />
-                <h3 className="text-2xl font-bold mb-2">Teacher Model</h3>
-                <p className="text-zinc-400">Has full access to the source material. Grades the exam.</p>
+              <div className={`w-full md:w-1/3 p-8 rounded-3xl border transition-all relative overflow-hidden ${
+                isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 shadow-md'
+              }`}>
+                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center mb-6">
+                  <BookOpen className="w-6 h-6" />
+                </div>
+                <h3 className="text-2xl font-bold mb-2">Teacher Agent</h3>
+                <p className={`text-sm leading-relaxed ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
+                  Has full access to the uploaded textbook or lecture slides. Generates the closed-book exam and objectively evaluates answers.
+                </p>
               </div>
 
               {/* The Wall */}
               <div className="flex flex-col items-center justify-center">
-                <div className="h-16 w-px bg-gradient-to-b from-transparent to-zinc-500/50 md:hidden" />
-                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-zinc-500/10 border border-zinc-500/20 text-zinc-400">
-                  <LockKeyhole className="w-6 h-6" />
+                <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 shadow-inner">
+                  <LockKeyhole className="w-7 h-7" />
                 </div>
-                <div className="text-sm font-bold text-zinc-400 mt-4 tracking-widest uppercase">No Source Access</div>
-                <div className="h-16 w-px bg-gradient-to-b from-zinc-500/50 to-transparent md:hidden" />
+                <div className="text-xs font-bold text-amber-500 mt-3 tracking-widest uppercase text-center">
+                  Zero Data Leakage
+                </div>
               </div>
 
               {/* Student Model */}
-              <div className="w-full md:w-1/3 p-8 rounded-3xl bg-white/5 border border-white/10 relative overflow-hidden group">
-                <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                <Cpu className="w-12 h-12 text-zinc-300 mb-6" />
-                <h3 className="text-2xl font-bold mb-2">Student Model</h3>
-                <p className="text-zinc-400">Starts blank. Only learns from your voice teaching sessions.</p>
+              <div className={`w-full md:w-1/3 p-8 rounded-3xl border transition-all relative overflow-hidden ${
+                isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 shadow-md'
+              }`}>
+                <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-600 flex items-center justify-center mb-6">
+                  <Cpu className="w-6 h-6" />
+                </div>
+                <h3 className="text-2xl font-bold mb-2">Child Agent</h3>
+                <p className={`text-sm leading-relaxed ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
+                  Starts completely blank. Takes a baseline exam (scoring ~0%), then builds neural memory solely from your teaching.
+                </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Steps Section */}
-        <section className="py-32 relative">
+        {/* 3 Step Workflow */}
+        <section className="py-28 relative">
           <div className="max-w-4xl mx-auto px-6">
             {[
-              { num: '01', title: 'Upload Material', desc: 'Provide a PDF or text. The Teacher model generates a secret exam based on this content.' },
-              { num: '02', title: 'Teach the AI', desc: 'Use your voice to explain the concepts. The Student model listens, asks questions, and builds its knowledge.' },
-              { num: '03', title: 'The Evaluation', desc: 'The Student model takes the exam. The Teacher model grades it, revealing your knowledge gaps.' }
+              { num: '01', title: 'Upload & Baseline Test', desc: 'The Teacher Agent ingests the material and creates 10 questions. The Child Agent takes a baseline test cold to confirm zero pre-existing knowledge.' },
+              { num: '02', title: 'Teach via Voice or Text', desc: 'Explain the concepts in simple language. The system extracts definitions and constructs the Child Agent’s neural memory.' },
+              { num: '03', title: 'Final Exam & TES Scoring', desc: 'The Child Agent retakes the exam using your teachings. Your Teaching Efficacy Score (TES) measures true comprehension.' }
             ].map((step, idx) => (
-              <div key={idx} className="flex gap-8 mb-20 last:mb-0 reveal-up">
-                <div className="text-6xl font-black text-white/10 leading-none">{step.num}</div>
+              <div key={idx} className="flex gap-8 mb-16 last:mb-0 reveal-up items-start">
+                <div className={`text-5xl sm:text-6xl font-black leading-none ${isDark ? 'text-zinc-800' : 'text-slate-200'}`}>
+                  {step.num}
+                </div>
                 <div>
-                  <h3 className="text-3xl font-bold mb-4">{step.title}</h3>
-                  <p className="text-xl text-zinc-400 font-light">{step.desc}</p>
+                  <h3 className="text-2xl font-bold mb-2">{step.title}</h3>
+                  <p className={`text-base font-normal leading-relaxed ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
+                    {step.desc}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Bento Grid */}
-        <section className="py-32 bg-[#0a0a0a] border-t border-white/5">
-          <div className="max-w-6xl mx-auto px-6">
-            <h2 className="text-4xl font-bold mb-16 text-center tracking-tight reveal-up">Features</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 reveal-up">
-              <div className="p-10 rounded-[2rem] bg-zinc-900/50 border border-white/5 row-span-2">
-                <Mic className="w-10 h-10 text-zinc-300 mb-6" />
-                <h3 className="text-3xl font-bold mb-4">Voice-First Teaching</h3>
-                <p className="text-zinc-400 text-lg">Speak naturally. Real-time transcription captures your explanation exactly as you deliver it, making the process frictionless.</p>
-              </div>
-              <div className="p-10 rounded-[2rem] bg-zinc-900/50 border border-white/5">
-                <Lock className="w-10 h-10 text-zinc-300 mb-6" />
-                <h3 className="text-2xl font-bold mb-2">Closed-Book Protocol</h3>
-                <p className="text-zinc-400">The student AI is completely isolated from the source document.</p>
-              </div>
-              <div className="p-10 rounded-[2rem] bg-zinc-900/50 border border-white/5">
-                <Brain className="w-10 h-10 text-zinc-300 mb-6" />
-                <h3 className="text-2xl font-bold mb-2">Interactive Pushback</h3>
-                <p className="text-zinc-400">The student asks clarifying questions if your explanation is vague.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Footer CTA */}
-        <section className="py-40 relative flex items-center justify-center overflow-hidden text-center border-t border-white/5">
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/20 to-transparent pointer-events-none" />
-          <div className="relative z-10 reveal-up px-6">
-            <h2 className="text-5xl md:text-7xl font-black mb-8 tracking-tighter">Ready to master it?</h2>
-            <button 
-              onClick={onStart}
-              className="px-10 py-5 bg-white text-black font-bold text-xl rounded-full hover:scale-105 transition-transform"
-            >
-              Start Your First Session
-            </button>
+        <section className={`py-32 relative text-center border-t transition-colors ${
+          isDark ? 'border-white/5 bg-[#08080a]' : 'border-slate-200 bg-white'
+        }`}>
+          <div className="relative z-10 reveal-up px-6 max-w-2xl mx-auto space-y-6">
+            <h2 className="text-4xl sm:text-6xl font-black tracking-tight">
+              Ready to test your mastery?
+            </h2>
+            <p className={isDark ? 'text-zinc-400' : 'text-slate-600'}>
+              Start a new learning session now or sign in to track your personal analytics.
+            </p>
+            <div>
+              <button 
+                onClick={onStart}
+                className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-lg rounded-2xl shadow-xl shadow-blue-600/30 transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                Launch Learning Tool
+              </button>
+            </div>
           </div>
         </section>
       </div>
     </ReactLenis>
   );
 };
-export default LandingPage;
 
+export default LandingPage;
