@@ -138,62 +138,68 @@ export const FullScreenSignup: React.FC<FullScreenSignupProps> = ({
         }`}
       >
         {/* Left Side: Editorial Sculptural / Atmospheric Visual Pane */}
-        <div className="relative p-8 md:p-14 md:w-1/2 flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#0c2f35] via-[#081f23] to-[#040e10] text-[#eef2ec]">
-          {/* Subtle Ambient Gradients & Texture */}
-          <div className="absolute inset-0 opacity-40 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#8c7b33]/40 via-transparent to-transparent pointer-events-none" />
-          <div className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-[#8c7b33]/20 blur-3xl pointer-events-none" />
-          <div className="absolute top-1/3 -right-20 w-60 h-60 rounded-full bg-[#2f7d57]/20 blur-3xl pointer-events-none" />
+        <div className="relative p-8 md:p-12 md:w-1/2 flex flex-col justify-between overflow-hidden bg-[#181d1e] text-[#eef2ec] min-h-[580px]">
+          {/* High-Aesthetic 3D Kinetic Sculpture Background */}
+          <img
+            src="/assets/auth-sculpture.jpg"
+            srcSet="/assets/auth-sculpture@2x.jpg 2x"
+            alt="Study Buddy Neural Kinetic Sculpture"
+            className="absolute inset-0 w-full h-full object-cover object-center select-none"
+          />
 
-          {/* Vertical Architectural Lines (Mirroring the reference full-screen-signup style) */}
-          <div className="absolute inset-0 flex justify-between opacity-15 pointer-events-none px-6">
-            <div className="w-px h-full bg-gradient-to-b from-white/40 via-white/10 to-transparent" />
-            <div className="w-px h-full bg-gradient-to-b from-white/40 via-white/10 to-transparent" />
-            <div className="w-px h-full bg-gradient-to-b from-white/40 via-white/10 to-transparent" />
-            <div className="w-px h-full bg-gradient-to-b from-white/40 via-white/10 to-transparent" />
+          {/* Calibrated Studio Vignette Overlays */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0c1518]/90 via-black/35 to-black/60 pointer-events-none" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-black/10 to-black/50 pointer-events-none" />
+
+          {/* Top Brand Tag with Backdrop Blur */}
+          <div className="relative z-10 flex items-center justify-between">
+            <div className="flex items-center gap-3 bg-black/50 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-white/10 shadow-lg">
+              <div className="w-8 h-8 rounded-xl bg-[#8c7b33] flex items-center justify-center text-white shadow-md shadow-[#8c7b33]/40">
+                <Brain className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-bold text-sm tracking-tight text-white block leading-tight">Study Buddy</span>
+                <span className="text-[10px] text-[#93aaa6] tracking-wider uppercase font-mono">
+                  Neural Feynman Engine
+                </span>
+              </div>
+            </div>
+
+            <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium bg-black/50 text-[#d4a743] border border-[#8c7b33]/40 backdrop-blur-md">
+              <Sparkles className="w-3 h-3" />
+              Active Synthesis
+            </div>
           </div>
 
-          {/* Top Brand Tag */}
-          <div className="relative z-10 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#8c7b33] flex items-center justify-center text-white shadow-lg shadow-[#8c7b33]/30">
-              <Brain className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="font-bold text-lg tracking-tight text-white">Study Buddy</span>
-              <p className="text-[11px] text-[#93aaa6] tracking-wide uppercase font-medium">
-                Neural Feynman Engine
+          {/* Center Space: Visual breathing room so the chrome sphere & golden coil shine */}
+          <div className="relative z-10 my-auto py-10" />
+
+          {/* Bottom Content / Statement */}
+          <div className="relative z-10 mt-auto space-y-4">
+            {/* Elegant Glassmorphic Quote Card */}
+            <div className="p-5 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/15 shadow-2xl space-y-2.5">
+              <p className="text-lg sm:text-xl font-normal tracking-tight leading-snug text-white font-serif italic">
+                "If you cannot explain it simply, you do not understand it well enough."
               </p>
+              <div className="flex items-center justify-between text-xs pt-1 border-t border-white/10">
+                <span className="text-[#93aaa6] font-medium">— Richard P. Feynman</span>
+                <span className="text-[11px] text-[#d4a743] font-mono">Nobel Laureate, 1965</span>
+              </div>
             </div>
-          </div>
 
-          {/* Center Graphic / Statement */}
-          <div className="relative z-10 my-12 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[#8c7b33]/20 text-[#d4a743] border border-[#8c7b33]/30 backdrop-blur-md">
-              <Sparkles className="w-3.5 h-3.5" />
-              Cognitive Isolation & Active Synthesis
-            </div>
-            <h1 className="text-3xl md:text-4xl font-normal tracking-tight leading-tight text-white font-serif italic">
-              "If you cannot explain it simply, you do not understand it well enough."
-            </h1>
-            <p className="text-sm text-[#93aaa6] leading-relaxed max-w-sm">
-              Teach an isolated AI child agent with zero document leakage. Test your mastery through cold baseline formulation and blind evaluation.
-            </p>
-
-            {/* Quick Demo Fill Pill */}
-            <div className="pt-2">
+            {/* Quick Demo Fill Button & Model Architecture */}
+            <div className="flex items-center justify-between gap-3 pt-1">
               <button
                 type="button"
                 onClick={handleUseDemo}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all cursor-pointer backdrop-blur-sm"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/15 hover:bg-white/25 text-white border border-white/20 transition-all cursor-pointer backdrop-blur-md shadow-sm"
               >
-                <span>⚡ Use Demo Student Credentials</span>
+                <span>⚡ Auto-fill Demo Scholar</span>
               </button>
+              <span className="text-[11px] text-zinc-300/80 font-mono">
+                120B / 20B Dual-Agent
+              </span>
             </div>
-          </div>
-
-          {/* Bottom Proof Metric */}
-          <div className="relative z-10 pt-6 border-t border-white/10 flex items-center justify-between text-xs text-[#93aaa6]">
-            <span>Dual-Agent 120B / 20B LPU Architecture</span>
-            <span className="text-[#d4a743] font-semibold">100% Free Cloud Access</span>
           </div>
         </div>
 
@@ -254,8 +260,20 @@ export const FullScreenSignup: React.FC<FullScreenSignupProps> = ({
 
           {/* Server Error Alert */}
           {serverError && (
-            <div className="mb-6 p-3.5 rounded-xl text-xs font-medium bg-red-500/10 border border-red-500/20 text-red-500">
-              {serverError}
+            <div className="mb-6 p-4 rounded-xl text-xs font-medium bg-red-500/10 border border-red-500/25 text-red-500 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+              <span className="leading-relaxed">{serverError}</span>
+              {serverError.toLowerCase().includes("already exists") && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLogin(true);
+                    setServerError(null);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors font-semibold cursor-pointer text-xs whitespace-nowrap shadow-sm"
+                >
+                  Switch to Sign In →
+                </button>
+              )}
             </div>
           )}
 

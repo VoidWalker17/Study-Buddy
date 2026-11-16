@@ -35,6 +35,8 @@ def register(req: RegisterRequest):
     try:
         user = create_user(req.name, req.email, req.password)
         auth_data = authenticate_user(req.email, req.password)
+        if not auth_data:
+            raise HTTPException(status_code=400, detail="Account created, but initial session generation failed. Please sign in.")
         return {
             "status": "success",
             "message": "User registered successfully.",
@@ -43,6 +45,10 @@ def register(req: RegisterRequest):
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Registration error: {str(e)}")
 
 @router.post("/login")
 def login(req: LoginRequest):

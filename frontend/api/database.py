@@ -2,6 +2,7 @@ import os
 import json
 import secrets
 import hashlib
+import sqlite3
 from typing import Optional, List, Dict, Any
 
 # Load .env file automatically
@@ -32,10 +33,8 @@ if USE_POSTGRES:
         print("Database Mode: Supabase Cloud PostgreSQL")
     except ImportError:
         USE_POSTGRES = False
-        import sqlite3
         print("Database Mode: Local SQLite Fallback")
 else:
-    import sqlite3
     print("Database Mode: Local SQLite")
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "studybuddy.db")
@@ -101,7 +100,6 @@ def get_db():
         global USE_POSTGRES
         orig = USE_POSTGRES
         USE_POSTGRES = False
-        import sqlite3
         conn = DBConnection()
         USE_POSTGRES = orig
         return conn
@@ -207,19 +205,26 @@ def create_user(name: str, email: str, password: str) -> Dict[str, Any]:
     db = get_db()
     email_clean = email.strip().lower()
     
-    db.execute("SELECT id FROM users WHERE email = ?", (email_clean,))
-    if db.fetchone():
-        db.close()
-        raise ValueError("User with this email already exists.")
+    try:
+        db.execute("SELECT id FROM users WHERE email = ?", (email_clean,))
+        if db.fetchone():
+            db.close()
+            raise ValueError("An account with this email already exists. Please sign in.")
+            
+        user_id = "usr_" + secrets.token_hex(8)
+        password_hash, salt = hash_password(password)
         
-    user_id = "usr_" + secrets.token_hex(8)
-    password_hash, salt = hash_password(password)
-    
-    db.execute(
-        "INSERT INTO users (id, name, email, password_hash, salt) VALUES (?, ?, ?, ?, ?)",
-        (user_id, name.strip(), email_clean, password_hash, salt)
-    )
-    db.commit()
+        db.execute(
+            "INSERT INTO users (id, name, email, password_hash, salt) VALUES (?, ?, ?, ?, ?)",
+            (user_id, name.strip(), email_clean, password_hash, salt)
+        )
+        db.commit()
+    except Exception as e:
+        db.close()
+        err_str = str(e).lower()
+        if "unique" in err_str or "duplicate" in err_str or "already exists" in err_str:
+            raise ValueError("An account with this email already exists. Please sign in.")
+        raise ValueError(f"Account creation error: {str(e)}")
     db.close()
     
     return {"id": user_id, "name": name.strip(), "email": email_clean}
