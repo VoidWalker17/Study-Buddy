@@ -1,3113 +1,2602 @@
+"use client"
+
 import * as React from "react"
 import { gsap } from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
-import {
-  BrainCircuit,
-  Sparkles,
-  ArrowRight,
-  CheckCircle2,
-  Clock,
-  Compass,
-  Flame,
-  Heart,
-  Layers,
-  Mic,
-  Minus,
-  Moon,
-  Plus,
-  Search,
-  ShieldCheck,
-  Sun,
-  TrendingUp,
-  X,
-  Menu
-} from "lucide-react"
 import { useAuth } from "../context/AuthContext"
 import { useTheme } from "../context/ThemeContext"
+import { ThemeToggle } from "../components/ThemeToggle"
 
-if (typeof window !== "undefined") {
-  gsap.registerPlugin(ScrollTrigger)
+export type TtlLink = { label: string; href?: string; onClick?: () => void }
+
+export type TtlNav = {
+  products?: { label: string; text: string; href?: string }[]
+  links?: TtlLink[]
+  login?: TtlLink
+  cta?: TtlLink
 }
 
-export type SubjectShot = {
-  src: string
-  alt?: string
-  tone?: string
-  focus?: string
+export type TtlConcept = { id: string; name: string; kind: string; mastery: number }
+
+export type TtlActivity = { id: string; date: string; text: string; concept: string; score: number; status: "Consolidated" | "Inquiry" | "Verified" }
+
+export type TtlTransfer = { from: string; to: string; explanation: string; memo: string }
+
+export type TtlStat = { value: number; label: string; prefix?: string; suffix?: string; decimals?: number }
+
+export type TtlFeature = { title: string; text: string }
+
+export type TtlCoverageItem = { title: string; text: string }
+
+export type TtlFaq = { q: string; a: string }
+
+export type TtlResource = { title: string; tag: string; image?: string; href?: string }
+
+export type TtlPalette = {
+  page: string
+  paper: string
+  ink: string
+  muted: string
+  rule: string
+  deep: string
+  deepInk: string
+  deepMuted: string
+  gold: string
+  lilac: string
+  lilacInk: string
+  accent: string
+  accentInk: string
+  good: string
+  chart: [string, string, string]
+  glow: [string, string, string]
 }
 
-export type SubjectCard = {
-  id: string
-  name: string
-  domain: string
-  image: SubjectShot
-  time: number
-  conceptsCount: number
-  difficulty: "Beginner" | "Intermediate" | "Advanced"
-  tags: string[]
-  brief: string
+const PALETTES = {
+  teal: {
+    page: "#f5f4ee",
+    paper: "#ffffff",
+    ink: "#10292d",
+    muted: "#66726f",
+    rule: "#e2e0d6",
+    deep: "#0c2f35",
+    deepInk: "#eef2ec",
+    deepMuted: "#93aaa6",
+    gold: "#8c7b33",
+    lilac: "#cdc8f6",
+    lilacInk: "#1e1a44",
+    accent: "#0f3238",
+    accentInk: "#ffffff",
+    good: "#2f7d57",
+    chart: ["#0f3238", "#a8963f", "#a9a2ee"] as [string, string, string],
+    glow: ["#c9c3f5", "#f2c4b4", "#f7dccb"] as [string, string, string],
+  },
+  darkTeal: {
+    page: "#070d0f",
+    paper: "#0e181b",
+    ink: "#ecf3f2",
+    muted: "#859794",
+    rule: "#1c2b2f",
+    deep: "#040809",
+    deepInk: "#e2ecea",
+    deepMuted: "#6b7d7a",
+    gold: "#d4a743",
+    lilac: "#1e293b",
+    lilacInk: "#9ebbe6",
+    accent: "#182c31",
+    accentInk: "#ffffff",
+    good: "#3ba776",
+    chart: ["#3ba776", "#d4a743", "#76a6e8"] as [string, string, string],
+    glow: ["#162d33", "#2c2a1c", "#172338"] as [string, string, string],
+  },
 }
 
-export type ScholarTestimonial = {
-  quote: string
-  name: string
-  role: string
-  image?: SubjectShot
-}
-
-export type DrillStep = {
-  title: string
-  text: string
-  minutes?: number
-}
-
-export type DrillExercise = {
-  name: string
-  topic: string
-  image: SubjectShot
-  time: number
-  targetConcepts: number
-  steps: DrillStep[]
-  laymanExplanation: string
-  rigorousExplanation: string
-}
-
-export type DomainCategory = {
-  name: string
-  count: number
-  image: SubjectShot
-}
-
-export type ResearchArticle = {
-  id: string
-  title: string
-  kind: "Knowledge" | "Blog" | "Podcasts"
-  date: string
-  read: string
-  image: SubjectShot
-  brief: string
-}
-
-export interface LandingPageProps {
-  onStart: () => void
-  onOpenAuth: (mode?: "login" | "register") => void
-  onGoToDashboard: () => void
-}
-
-// ---------------- Content Data ----------------
-
-const U = "https://images.unsplash.com/photo-"
-const shot = (id: string, alt: string, tone: string, focus?: string): SubjectShot => ({
-  src: U + id,
-  alt,
-  tone,
-  focus
-})
-
-const DEFAULT_SUBJECTS: SubjectCard[] = [
-  {
-    id: "quantum-electrodynamics",
-    name: "Quantum Mechanics & Wave Packets",
-    domain: "Physics",
-    image: shot("1635070041078-e363dbe005cb", "Quantum wave packet interference lasers", "#1e1b4b"),
-    time: 25,
-    conceptsCount: 8,
-    difficulty: "Advanced",
-    tags: ["physics", "stem", "advanced"],
-    brief: "De Broglie wavelengths, Heisenberg uncertainty, and wavefunction collapse."
-  },
-  {
-    id: "neural-attention",
-    name: "Transformer Attention & Neural Nets",
-    domain: "Computer Science",
-    image: shot("1620712943543-bcc4688e7485", "Glowing neural network architecture", "#0f172a"),
-    time: 20,
-    conceptsCount: 10,
-    difficulty: "Advanced",
-    tags: ["cs", "stem", "advanced"],
-    brief: "Scaled dot-product attention, multi-head projections, and backpropagation."
-  },
-  {
-    id: "molecular-genetics",
-    name: "Cellular Respiration & Krebs Cycle",
-    domain: "Biomedical",
-    image: shot("1530497610245-94d3c16cda28", "DNA double helix microscope optics", "#14532d"),
-    time: 30,
-    conceptsCount: 9,
-    difficulty: "Intermediate",
-    tags: ["biomedical", "stem"],
-    brief: "Oxidative phosphorylation, ATP synthase motors, and electron transport."
-  },
-  {
-    id: "macroeconomics",
-    name: "Macroeconomics & Game Theory",
-    domain: "Economics",
-    image: shot("1611974789855-9c2a0a7236a3", "Global economic trading and financial data", "#78350f"),
-    time: 22,
-    conceptsCount: 7,
-    difficulty: "Intermediate",
-    tags: ["economics"],
-    brief: "Nash equilibrium, monetary policy transmission, and inflation curves."
-  },
-  {
-    id: "os-virtual-memory",
-    name: "Operating Systems & Virtual Memory",
-    domain: "Computer Science",
-    image: shot("1518770660439-4636190af475", "Silicon microprocessor wafer circuit board", "#1e293b"),
-    time: 28,
-    conceptsCount: 8,
-    difficulty: "Intermediate",
-    tags: ["cs", "stem"],
-    brief: "Page tables, TLB cache misses, segmentation, and demand paging."
-  },
-  {
-    id: "neurobiology",
-    name: "Neurobiology & Synaptic Transmission",
-    domain: "Biomedical",
-    image: shot("1559757175-5700dde675bc", "Neural brain synaptic network illumination", "#312e81"),
-    time: 24,
-    conceptsCount: 6,
-    difficulty: "Advanced",
-    tags: ["biomedical", "stem"],
-    brief: "Action potential kinetics, neurotransmitter exocytosis, and long-term potentiation."
-  },
-  {
-    id: "pure-math",
-    name: "Abstract Algebra & Group Theory",
-    domain: "Mathematics",
-    image: shot("1509228468518-180dd4864904", "Mathematics equations on classroom chalkboard", "#1f2937"),
-    time: 35,
-    conceptsCount: 11,
-    difficulty: "Advanced",
-    tags: ["mathematics", "stem", "advanced"],
-    brief: "Homomorphisms, Lagrange's theorem, cyclic groups, and symmetry operations."
-  },
-  {
-    id: "organic-chemistry",
-    name: "Organic Chemistry Stereochemistry",
-    domain: "Chemistry",
-    image: shot("1532187863486-abf9dbad1b69", "Laboratory glassware with glowing chemical reaction", "#064e3b"),
-    time: 30,
-    conceptsCount: 8,
-    difficulty: "Intermediate",
-    tags: ["stem"],
-    brief: "Chirality, enantiomers, nucleophilic substitution (SN1/SN2), and carbocations."
-  },
-  {
-    id: "distributed-systems",
-    name: "Distributed Consensus & Raft",
-    domain: "Computer Science",
-    image: shot("1451187580459-43490279c0fa", "Global network constellation mesh", "#0369a1"),
-    time: 26,
-    conceptsCount: 7,
-    difficulty: "Advanced",
-    tags: ["cs", "stem"],
-    brief: "Leader election, log replication, safety invariants, and Byzantine fault tolerance."
-  },
-  {
-    id: "astrophysics",
-    name: "Astrophysics & General Relativity",
-    domain: "Physics",
-    image: shot("1462331940025-496dfbfc7564", "Deep celestial nebula and starry cosmos", "#2e1065"),
-    time: 40,
-    conceptsCount: 9,
-    difficulty: "Advanced",
-    tags: ["physics", "stem"],
-    brief: "Spacetime curvature, geodesic trajectories, Schwarzschild radius, and Hawking radiation."
-  },
-  {
-    id: "cognitive-science",
-    name: "Cognitive Science & Mental Models",
-    domain: "Cognitive Science",
-    image: shot("1507679799987-c73779587ccf", "Architectural clean study table with books and laptop", "#44403c"),
-    time: 18,
-    conceptsCount: 6,
-    difficulty: "Beginner",
-    tags: ["cognitive"],
-    brief: "Working memory bounds, spaced retrieval, chunking, and dual-coding theory."
-  },
-  {
-    id: "particle-physics",
-    name: "Particle Physics & Standard Model",
-    domain: "Physics",
-    image: shot("1507413245164-6160d8298b31", "Particle physics optics and laboratory laser beam", "#1e1b4b"),
-    time: 32,
-    conceptsCount: 10,
-    difficulty: "Advanced",
-    tags: ["physics", "stem"],
-    brief: "Quarks, leptons, gauge bosons, Higgs mechanism, and electroweak symmetry."
-  }
+const DEFAULT_CONCEPTS: TtlConcept[] = [
+  { id: "quantum", name: "Quantum Superposition", kind: "Wavefunction Collapse · Hilbert Space", mastery: 92.4 },
+  { id: "thermo", name: "Entropy & Microstates", kind: "Statistical Mechanics · Boltzmann Law", mastery: 86.1 },
+  { id: "attention", name: "Neural Attention Mechanics", kind: "Transformer Multi-Head Projections", mastery: 83.8 },
 ]
 
-const DEFAULT_TESTIMONIALS: ScholarTestimonial[] = [
-  {
-    quote: "Study Buddy forced me to stop skimming. When the Child Agent asked why backprop requires the chain rule instead of finite differences, I froze. Forcing myself to teach it simply pushed me into the top 1% of my graduate AI qualifiers.",
-    name: "Alex Chen",
-    role: "Stanford AI Researcher",
-    image: shot("1534528741775-53994a69daeb", "Portrait of Alex Chen", "#334155")
-  },
-  {
-    quote: "My undergraduate physics students who taught the Child Agent scored 28% higher on conceptual synthesis exams. It completely breaks the illusion of competence. It's the only AI tool that enforces active recall over passive reading.",
-    name: "Dr. Elena Vance",
-    role: "Professor of Theoretical Physics, Oxford",
-    image: shot("1573496359142-b8d87734a5a2", "Portrait of Dr. Elena Vance", "#1e293b")
-  },
-  {
-    quote: "Teaching the Child Agent feels like mentoring a curious medical intern. When you can explain renal electrolyte regulation in plain English without notes, you truly know it. Cut my USMLE Step 1 study time in half.",
-    name: "Marcus Thornton",
-    role: "Johns Hopkins Medical Scholar",
-    image: shot("1507003211169-0a1dd7228f2d", "Portrait of Marcus Thornton", "#0f172a")
-  }
+const DEFAULT_ACTIVITY: TtlActivity[] = [
+  { id: "a1", date: "Just now", text: "Child Agent asked: 'Why can't wavefunctions collapse backwards?'", concept: "Quantum Superposition", score: 94, status: "Consolidated" },
+  { id: "a2", date: "10m ago", text: "Student explained using double-slit interference analogy", concept: "Quantum Superposition", score: 88, status: "Verified" },
+  { id: "a3", date: "1h ago", text: "Cold Baseline Exam formulated by Teacher Agent (120B)", concept: "Entropy & Microstates", score: 14, status: "Inquiry" },
+  { id: "a4", date: "3h ago", text: "Misconception detected: 'Heat as substance' corrected to kinetic variance", concept: "Entropy & Microstates", score: 82, status: "Consolidated" },
+  { id: "a5", date: "Yesterday", text: "Child Agent scored 91% on Blind Final Examination", concept: "Neural Attention Mechanics", score: 91, status: "Verified" },
 ]
 
-const DEFAULT_DRILL: DrillExercise = {
-  name: "Wave-Particle Duality & De Broglie Hypothesis",
-  topic: "Quantum Foundations",
-  image: shot("1635070041078-e363dbe005cb", "Quantum interference lasers", "#1e1b4b"),
-  time: 15,
-  targetConcepts: 4,
-  steps: [
-    {
-      title: "Deconstruct Postulate",
-      text: "Explain Louis de Broglie's hypothesis (λ = h/p) in plain English without citing formulas or invoking magic.",
-      minutes: 3
-    },
-    {
-      title: "Layman Analogy",
-      text: "Formulate an everyday physical analogy comparing macroscopic baseballs to microscopic electrons.",
-      minutes: 5
-    },
-    {
-      title: "Resolve Paradox",
-      text: "Answer the Child Agent's challenge: 'If baseballs have wavelengths, why don't they diffract through a doorway?'",
-      minutes: 4
-    },
-    {
-      title: "120B Verification",
-      text: "The Teacher Agent verifies your clarity, penalizes buzzwords, and tests the Child Agent's retained memory."
+const DEFAULT_STATS: TtlStat[] = [
+  { value: 4.8, suffix: "x", decimals: 1, label: "Measured conceptual retention factor" },
+  { value: 94.2, suffix: "%", decimals: 1, label: "Average post-Feynman final exam score" },
+  { value: 14200, suffix: "+", label: "Core syllabi and textbooks synthesized" },
+]
+
+const DEFAULT_FEATURES: TtlFeature[] = [
+  {
+    title: "Instant Syllabus Ingestion & Concept Extraction",
+    text: "Drop any textbook chapter, syllabus, or lecture PDF. Our 120B Teacher Agent parses the structural ontology in seconds, isolating foundational axioms and formulating a strict, cold baseline exam without human authoring bias.",
+  },
+  {
+    title: "Isolated Child AI & Live Socratic Dialogue",
+    text: "Meet an intelligent Child AI with zero prior knowledge of your document. Speak or write your explanations in plain terms. As the Child questions your reasoning, you pinpoint gaps in your own understanding before any high-stakes exam.",
+  },
+  {
+    title: "Empirical TES Scoring & Verification Analytics",
+    text: "Watch the Child Agent sit for a blind final exam written and graded by the Teacher Agent. Your Teaching Efficiency Score (TES = ΔScore × Coverage) gives you an indisputable mathematical guarantee that you have achieved true conceptual mastery.",
+  },
+]
+
+const DEFAULT_COVERAGE: TtlCoverageItem[] = [
+  { title: "Air-Gapped Isolation", text: "Child Agent has zero document access" },
+  { title: "Cold Baseline Exam", text: "Blind pre-test establishes true floor" },
+  { title: "Socratic Scaffolding", text: "Pushes past memorized jargon" },
+  { title: "TES Proof Metric", text: "Mathematical validation of retention" },
+]
+
+const DEFAULT_FAQ: TtlFaq[] = [
+  {
+    q: "How does the Feynman Technique work inside Study Buddy?",
+    a: "Nobel laureate Richard Feynman observed that true understanding means being able to explain a complex topic in simple, intuitive language without hiding behind buzzwords. In Study Buddy, you explain concepts to an AI Child Agent that starts with zero knowledge of your material. If the Child Agent can pass a difficult exam based only on what you taught it, you have proven mastery.",
+  },
+  {
+    q: "Why do you use two separate AI models (Teacher vs. Child)?",
+    a: "To eliminate hallucination and cheating. The Teacher Agent (a flagship 120B model) holds the complete ground-truth syllabus, formulates rigorous multi-sentence conceptual exams, and grades responses. The Child Agent (a 20B lightweight model) is strictly air-gapped with zero access to your PDF. It learns solely from your explanations.",
+  },
+  {
+    q: "What is the Teaching Efficiency Score (TES)?",
+    a: "TES is a mathematical index defined as: TES = (Final Exam Score - Cold Baseline Score) × Concept Coverage. A high TES proves that your teaching actively transferred conceptual understanding to the Child Agent rather than relying on prior training data.",
+  },
+  {
+    q: "What happens during the Cold Baseline Examination?",
+    a: "Before you teach a single word, the Child Agent takes an automated baseline test formulated by the Teacher Agent. Because the Child has not been taught your material yet, it establishes a true baseline score (typically 5%–15%), proving that subsequent improvement is 100% attributable to your instruction.",
+  },
+  {
+    q: "Do I need to install Ollama or run heavy models on my laptop?",
+    a: "No! All inference runs in the cloud on Groq LPU acceleration. Response times are ultra-fast (~1.2 seconds for full exam grading), and the app works on any modern web browser without downloading gigabytes of model weights.",
+  },
+  {
+    q: "Can I use voice to teach instead of typing?",
+    a: "Yes! Study Buddy integrates Groq Whisper speech-to-text. Simply tap the microphone button in the dialogue chamber and speak naturally as if you were explaining the concept to a curious colleague or younger student.",
+  },
+  {
+    q: "What document formats are supported for upload?",
+    a: "You can upload course PDFs, lecture presentation slides, Markdown notes, research preprints, or textbook chapters. The Teacher Agent extracts text, builds the concept hierarchy, and structures the session automatically.",
+  },
+  {
+    q: "Can I export an official certification or session transcript?",
+    a: "Yes. Once the final examination and TES calculation are complete, you can download a formatted executive PDF report showing your baseline score, final score, question-by-question breakdown, and TES certificate.",
+  },
+]
+
+const DEFAULT_RESOURCES: TtlResource[] = [
+  {
+    title: "The Neurobiology of Active Teaching: Why Richard Feynman was right",
+    tag: "Research Paper",
+    image: "/resources/neurobiology-feynman.jpg",
+  },
+  {
+    title: "Dual-Agent Cognitive Isolation: Preventing Information Leakage in AI Tutors",
+    tag: "Architecture",
+    image: "/resources/cognitive-isolation.jpg",
+  },
+  {
+    title: "The Mathematical Derivation of Teaching Efficiency Score (TES)",
+    tag: "Whitepaper",
+    image: "/resources/tes-mathematics.jpg",
+  },
+  {
+    title: "From Passive Highlighting to Synaptic Recall: A 30-Day Comparative Trial",
+    tag: "Clinical Data",
+    image: "/resources/synaptic-recall.svg",
+  },
+]
+
+const DEFAULT_FOOTER_COLUMNS: { title: string; links: TtlLink[] }[] = [
+  {
+    title: "Platform",
+    links: [
+      { label: "Feynman Studio", href: "#features" },
+      { label: "Dual-Agent Engine", href: "#features" },
+      { label: "Cold Baseline Exam", href: "#features" },
+      { label: "TES Analytics", href: "#features" },
+    ],
+  },
+  {
+    title: "Methodology",
+    links: [
+      { label: "Socratic Questioning", href: "#benefits" },
+      { label: "Cognitive Isolation", href: "#coverage" },
+      { label: "Bloom's Taxonomy", href: "#operating" },
+      { label: "Spaced Retention", href: "#pricing" },
+    ],
+  },
+  {
+    title: "Resources",
+    links: [
+      { label: "Research Whitepapers", href: "#resources" },
+      { label: "Documentation", href: "#faq" },
+      { label: "API Reference", href: "#faq" },
+      { label: "System Health", href: "#top" },
+    ],
+  },
+  {
+    title: "Academic",
+    links: [
+      { label: "University Pilots", href: "#faq" },
+      { label: "Professor Portal", href: "#faq" },
+      { label: "Cognitive Science Lab", href: "#resources" },
+      { label: "Student Grants", href: "#get-started" },
+    ],
+  },
+  {
+    title: "Account",
+    links: [
+      { label: "Sign In", href: "#login" },
+      { label: "Create Account", href: "#get-started" },
+      { label: "My Learning Hub", href: "#dashboard" },
+      { label: "Security & Privacy", href: "#coverage" },
+    ],
+  },
+]
+
+function clamp(v: number, a: number, b: number) {
+  return Math.min(b, Math.max(a, v))
+}
+
+function easeOutCubic(t: number) {
+  const c = clamp(t, 0, 1)
+  return 1 - Math.pow(1 - c, 3)
+}
+
+function formatPercent(n: number, decimals = 1) {
+  return n.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + "%"
+}
+
+function formatStat(s: TtlStat, v: number) {
+  const d = s.decimals ?? 0
+  return (s.prefix ?? "") + v.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }) + (s.suffix ?? "")
+}
+
+function percentages(values: number[]) {
+  const total = values.reduce((a, b) => a + Math.max(0, b), 0)
+  if (!total) return values.map(() => 0)
+  const raw = values.map((v) => (Math.max(0, v) / total) * 100)
+  const out = raw.map(Math.floor)
+  let left = 100 - out.reduce((a, b) => a + b, 0)
+  const order = raw.map((r, i) => [r - Math.floor(r), i]).sort((a, b) => b[0] - a[0] || a[1] - b[1])
+  for (let k = 0; left > 0; k = (k + 1) % order.length, left--) out[order[k][1]]++
+  return out
+}
+
+function mulberry(seed: number) {
+  let a = seed >>> 0
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0
+    let t = a
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+function series(seed: number, n: number, vol: number, drift: number) {
+  const r = mulberry(seed)
+  const out = [1]
+  for (let i = 1; i < n; i++) out.push(out[i - 1] * (1 + drift + (r() - 0.5) * vol))
+  const last = out[n - 1]
+  return out.map((v) => v / last)
+}
+
+function sparkPath(values: number[], w: number, h: number, pad = 4) {
+  if (values.length < 2) return { line: "", area: "" }
+  const lo = Math.min(...values)
+  const hi = Math.max(...values)
+  const span = hi - lo || 1
+  const pts = values.map((v, i) => [(i / (values.length - 1)) * w, pad + (1 - (v - lo) / span) * (h - pad * 2)])
+  const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join("")
+  return { line, area: line + "L" + w + " " + h + "L0 " + h + "Z" }
+}
+
+function markedWords(text: string) {
+  const out: { word: string; mark: boolean; br: boolean; glue: boolean; tail: string }[] = []
+  let trail = false
+  text.split("*").forEach((part, i) => {
+    const lead = /^\S/.test(part)
+    part.split("\n").forEach((line, j) => {
+      if (j > 0 && out.length) out[out.length - 1].br = true
+      line.split(/[ \t]+/).forEach((w, k) => {
+        if (!w) return
+        if (i > 0 && j === 0 && k === 0 && lead && trail && out.length) out[out.length - 1].glue = true
+        out.push({ word: w, mark: i % 2 === 1, br: false, glue: false, tail: "" })
+      })
+    })
+    if (part) trail = /\S$/.test(part)
+  })
+  for (let k = 0; k < out.length - 1; k++) {
+    const m = out[k].glue && !out[k].tail ? out[k + 1].word.match(/^[\u2014\u2013]+/) : null
+    if (!m) continue
+    out[k].tail = m[0]
+    out[k + 1].word = out[k + 1].word.slice(m[0].length)
+    if (!out[k + 1].word) {
+      out[k].glue = out[k + 1].glue
+      out[k].br = out[k + 1].br
+      out.splice(k + 1, 1)
     }
-  ],
-  laymanExplanation: "Light acts like ripples on a lake when traveling, but like tiny localized pebbles when striking a wall. Similarly, particles of matter have a microscopic ripple that scales inversely with their mass.",
-  rigorousExplanation: "Every quantum entity is characterized by a state vector whose spatial probability amplitude exhibits wave interferometry with wavelength λ = h/mv, verifiable through Davisson-Germer electron diffraction."
-}
-
-const DEFAULT_CATEGORIES: DomainCategory[] = [
-  { name: "Theoretical Physics", count: 142, image: shot("1635070041078-e363dbe005cb", "", "#1e1b4b") },
-  { name: "Artificial Intelligence", count: 215, image: shot("1620712943543-bcc4688e7485", "", "#0f172a") },
-  { name: "Computer Systems", count: 178, image: shot("1518770660439-4636190af475", "", "#1e293b") },
-  { name: "Biomedical Sciences", count: 310, image: shot("1530497610245-94d3c16cda28", "", "#14532d") },
-  { name: "Pure Mathematics", count: 190, image: shot("1509228468518-180dd4864904", "", "#1f2937") },
-  { name: "Economics & Finance", count: 124, image: shot("1611974789855-9c2a0a7236a3", "", "#78350f") },
-  { name: "Neuroscience", count: 165, image: shot("1559757175-5700dde675bc", "", "#312e81") },
-  { name: "Organic Chemistry", count: 230, image: shot("1532187863486-abf9dbad1b69", "", "#064e3b") },
-  { name: "Philosophy & Logic", count: 98, image: shot("1456513080510-7bf3a84b82f8", "", "#451a03") }
-]
-
-const DEFAULT_ARTICLES: ResearchArticle[] = [
-  {
-    id: "r1",
-    title: "The Feynman Technique in the Era of Large Language Models: A Cognitive Transfer Study",
-    kind: "Knowledge",
-    date: "2026-03-12",
-    read: "8 min read",
-    image: shot("1434030216411-0b793f4b4173", "Student taking structured notes", "#1e293b"),
-    brief: "Empirical trial demonstrating 3.4x higher conceptual recall when students teach isolated agents."
-  },
-  {
-    id: "r2",
-    title: "Cognitive Isolation: Eliminating AI Hallucination by Partitioning Teacher and Student LLMs",
-    kind: "Knowledge",
-    date: "2026-04-05",
-    read: "11 min read",
-    image: shot("1457369804613-52c61a468e7d", "Open book in university library", "#0f172a"),
-    brief: "Why zero document leakage to the learner agent is required to evaluate true human understanding."
-  },
-  {
-    id: "r3",
-    title: "The Mathematics of TES: Formalizing the Teaching Effectiveness Score (ΔScore × Coverage)",
-    kind: "Podcasts",
-    date: "2026-05-18",
-    read: "34 min listen",
-    image: shot("1507668077129-56e32842fceb", "Microphone in recording studio", "#312e81"),
-    brief: "Deep dive with cognitive scientists into quantifying conceptual transfer without multiple-choice bias."
-  },
-  {
-    id: "r4",
-    title: "Overcoming the Illusion of Competence: How Socratic AI Probing Destroys Rote Memorization",
-    kind: "Blog",
-    date: "2026-06-01",
-    read: "5 min read",
-    image: shot("1516321318423-f06f85e504b3", "Laptops and glowing screens in lecture room", "#1e1b4b"),
-    brief: "Passive rereading creates fake fluency. Explaining to an empty vessel exposes true cognitive gaps."
-  },
-  {
-    id: "r5",
-    title: "Benchmarking Flagship Reasoners (120B) as Objective Ground-Truth Educational Judges",
-    kind: "Knowledge",
-    date: "2026-07-22",
-    read: "9 min read",
-    image: shot("1524995997946-a1c2e315a42f", "Bookshelves with architectural perspective", "#1e293b"),
-    brief: "Analyzing rubric calibration, grading variance, and adversarial defense in automated exam assessment."
-  },
-  {
-    id: "r6",
-    title: "From Medical School to Quantum Electrodynamics: Student Journeys with Study Buddy",
-    kind: "Podcasts",
-    date: "2026-08-14",
-    read: "42 min listen",
-    image: shot("1517842645767-c639042777db", "Scholars engaged in active technical discussion", "#0f172a"),
-    brief: "Interviews with three high-achieving scholars who replaced flashcards with active Socratic teaching."
   }
-]
-
-const MARQUEE_CONCEPTS = [
-  "Backpropagation",
-  "Schrödinger Equation",
-  "Bayesian Inference",
-  "Heisenberg Uncertainty",
-  "Virtual Memory",
-  "Krebs Cycle",
-  "Nash Equilibrium",
-  "Enthalpy",
-  "Epigenetics",
-  "Turing Completeness",
-  "Eigenvalues",
-  "Markov Chains",
-  "Synaptic Plasticity",
-  "Fourier Transform",
-  "Central Limit Theorem",
-  "Amortized Analysis",
-  "General Relativity",
-  "Keynesian Multiplier",
-  "Polymerase Chain Reaction",
-  "CAP Theorem"
-]
-
-const PLANNER_STAGES = [
-  {
-    tab: "01. Diagnostic Cold Test",
-    eyebrow: "Stage 01 • Baseline Assessment",
-    title: "Establish baseline without guessing",
-    text: "Before you explain a single sentence, our 120B Teacher Agent administers a diagnostic exam to the Child Agent with zero knowledge. This establishes the true, cold baseline score.",
-    points: [
-      "Zero syllabus leakage guaranteed",
-      "Establishes pre-teaching benchmark"
-    ]
-  },
-  {
-    tab: "02. Voice & Text Teaching",
-    eyebrow: "Stage 02 • Socratic Dialogue",
-    title: "Teach like Feynman. Simplify until it clicks.",
-    text: "Speak or type in plain language. The Child Agent asks curious, probing questions, challenges fuzzy reasoning, and builds real neural memory in real time.",
-    points: [
-      "Real-time speech transcription via Groq Whisper",
-      "Child Agent surfaces cognitive blind spots"
-    ]
-  },
-  {
-    tab: "03. 120B Evaluation & TES",
-    eyebrow: "Stage 03 • Verifiable Verification",
-    title: "Objective proof of your knowledge transfer",
-    text: "The Teacher Agent (120B Flagship) administers the final exam. Compare baseline vs. final answers side-by-side and calculate your Teaching Effectiveness Score (TES).",
-    points: [
-      "Granular rubric scoring per concept",
-      "Instant PDF export of learning analytics"
-    ]
-  }
-]
-
-// ---------------- Inline CSS Styles ----------------
-
-const CSS_STYLES = `
-.sb-root {
-  --sb-bg: #f8fafc;
-  --sb-surface: #f1f5f9;
-  --sb-card: #ffffff;
-  --sb-ink: #0f172a;
-  --sb-muted: #64748b;
-  --sb-line: rgba(15, 23, 42, 0.08);
-  --sb-accent: #2563eb;
-  --sb-accent-glow: rgba(37, 99, 235, 0.18);
-  --sb-soft: #dbeafe;
-  --sb-peach: #fff1f2;
-  --sb-sage: #ecfdf5;
-  --sb-sky: #eff6ff;
-  --sb-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 16px 36px -12px rgba(15, 23, 42, 0.12);
-  --sb-serif: "Instrument Serif", Georgia, Cambria, serif;
-  --sb-sans: "Inter", system-ui, -apple-system, sans-serif;
-  position: relative;
-  min-height: 100vh;
-  background: var(--sb-bg);
-  color: var(--sb-ink);
-  font-family: var(--sb-sans);
-  font-size: 15px;
-  line-height: 1.5;
-  overflow-x: clip;
-  -webkit-font-smoothing: antialiased;
-  transition: background 0.3s ease, color 0.3s ease;
+  return out
 }
 
-.sb-root[data-theme="dark"] {
-  --sb-bg: #07090e;
-  --sb-surface: #0f131c;
-  --sb-card: #151b27;
-  --sb-ink: #f8fafc;
-  --sb-muted: #94a3b8;
-  --sb-line: rgba(248, 250, 252, 0.08);
-  --sb-accent: #3b82f6;
-  --sb-accent-glow: rgba(59, 130, 246, 0.28);
-  --sb-soft: #1e293b;
-  --sb-peach: #2a1518;
-  --sb-sage: #0d281e;
-  --sb-sky: #132238;
-  --sb-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 20px 48px -16px rgba(0, 0, 0, 0.7);
+function isEmail(s: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s.trim())
 }
 
-.sb-root * { box-sizing: border-box; }
-.sb-serif { font-family: var(--sb-serif); letter-spacing: -0.015em; font-weight: 400; }
-.sb-h2 { font-family: var(--sb-serif); font-size: clamp(34px, 5.2vw, 58px); line-height: 1.04; letter-spacing: -0.025em; text-wrap: balance; }
-.sb-lede { color: var(--sb-muted); max-width: 48ch; font-size: 15px; line-height: 1.6; }
-.sb-w { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: 0.08em; margin-bottom: -0.08em; }
-.sb-wi { display: inline-block; will-change: transform; }
-.sb-wrap { width: min(1200px, 100% - 36px); margin-inline: auto; }
-.sb-sec { padding-block: clamp(72px, 10vw, 130px); }
-.sb-center { text-align: center; display: grid; justify-items: center; gap: 14px; }
+const useIso = typeof window !== "undefined" ? React.useLayoutEffect : React.useEffect
 
-/* Buttons */
-.sb-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 42px;
-  padding: 0 20px 0 16px;
-  border-radius: 999px;
-  font-size: 13.5px;
-  font-weight: 500;
-  white-space: nowrap;
-  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.25s, box-shadow 0.25s;
-  cursor: pointer;
-  border: none;
-}
-.sb-btn:hover { transform: translateY(-1px); }
-.sb-btn:active { transform: translateY(0) scale(0.97); }
-.sb-btn-accent {
-  background: var(--sb-accent);
-  color: #ffffff;
-  box-shadow: 0 8px 24px -8px var(--sb-accent);
-}
-.sb-btn-light {
-  background: #ffffff;
-  color: #0f172a;
-  box-shadow: 0 10px 25px -10px rgba(0, 0, 0, 0.3);
-}
-.sb-btn-ghost {
-  background: var(--sb-card);
-  color: var(--sb-ink);
-  box-shadow: inset 0 0 0 1px var(--sb-line);
-}
-.sb-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: 0.9; }
-
-/* Chip */
-.sb-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 28px;
-  padding: 0 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  background: var(--sb-card);
-  box-shadow: inset 0 0 0 1px var(--sb-line);
-  color: var(--sb-ink);
-  white-space: nowrap;
-  cursor: pointer;
-  border: none;
-  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-}
-.sb-chip[aria-pressed="true"] {
-  background: var(--sb-accent);
-  color: #ffffff;
-  box-shadow: none;
+function useReduced() {
+  const [reduced, setReduced] = React.useState(false)
+  React.useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const on = () => setReduced(mq.matches)
+    on()
+    mq.addEventListener("change", on)
+    return () => mq.removeEventListener("change", on)
+  }, [])
+  return reduced
 }
 
-/* Picture */
-.sb-pic {
-  position: relative;
-  overflow: hidden;
-  background: var(--tone, #334155);
-}
-.sb-pic img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0;
-  transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.sb-pic[data-state="ok"] img { opacity: 1; }
-.sb-pic[data-state="failed"] img { display: none; }
-
-/* Navigation */
-.sb-navwrap { position: sticky; top: 0; z-index: 60; height: 0; }
-.sb-nav {
-  position: absolute;
-  left: 50%;
-  top: 14px;
-  transform: translateX(-50%);
-  width: min(1200px, 100% - 32px);
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 12px;
-  height: 54px;
-  padding: 0 10px 0 18px;
-  border-radius: 999px;
-  color: #ffffff;
-  transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.4s, color 0.4s, box-shadow 0.4s, backdrop-filter 0.4s;
-}
-.sb-nav[data-compact="true"] {
-  width: min(920px, 100% - 24px);
-  background: color-mix(in srgb, var(--sb-bg) 82%, transparent);
-  color: var(--sb-ink);
-  box-shadow: 0 0 0 1px var(--sb-line), 0 12px 36px -12px rgba(0, 0, 0, 0.2);
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  backdrop-filter: blur(18px) saturate(1.4);
-}
-.sb-nav-links { display: flex; gap: 4px; }
-.sb-nav-links a {
-  font-size: 13px;
-  padding: 7px 12px;
-  border-radius: 999px;
-  opacity: 0.88;
-  text-decoration: none;
-  color: inherit;
-  transition: background 0.2s, opacity 0.2s;
-}
-.sb-nav-links a:hover {
-  opacity: 1;
-  background: color-mix(in srgb, currentColor 12%, transparent);
-}
-.sb-logo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: -0.02em;
-  color: inherit;
-  text-decoration: none;
-}
-.sb-nav-end { display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
-.sb-iconbtn {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: none;
-  background: none;
-  color: inherit;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.sb-iconbtn:hover { background: color-mix(in srgb, currentColor 12%, transparent); }
-.sb-badge {
-  position: absolute;
-  top: 2px;
-  right: 0;
-  min-width: 17px;
-  height: 17px;
-  padding: 0 4px;
-  border-radius: 99px;
-  background: var(--sb-accent);
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 700;
-  display: grid;
-  place-items: center;
-}
-.sb-menu-btn { display: none; }
-.sb-sheet {
-  position: absolute;
-  top: 76px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 24px);
-  padding: 12px;
-  border-radius: 24px;
-  background: var(--sb-card);
-  color: var(--sb-ink);
-  box-shadow: var(--sb-shadow), 0 0 0 1px var(--sb-line);
-  display: grid;
-  gap: 4px;
-  animation: sb-drop 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.sb-sheet a, .sb-sheet button {
-  padding: 12px 14px;
-  border-radius: 14px;
-  text-align: left;
-  font-size: 15px;
-  color: inherit;
-  text-decoration: none;
-  background: none;
-  border: none;
-}
-.sb-sheet a:hover, .sb-sheet button:hover { background: var(--sb-surface); }
-@keyframes sb-drop {
-  from { opacity: 0; transform: translate(-50%, -8px) scale(0.98); }
+function useTween(target: number[], reduced: boolean, ms = 760) {
+  const [v, setV] = React.useState(target)
+  const cur = React.useRef(target)
+  const key = target.join(",")
+  React.useEffect(() => {
+    const from = cur.current
+    if (reduced || from.length !== target.length) {
+      cur.current = target
+      setV(target)
+      return
+    }
+    let raf = 0
+    const t0 = performance.now()
+    const tick = (now: number) => {
+      const k = easeOutCubic((now - t0) / ms)
+      const next = target.map((t, i) => from[i] + (t - from[i]) * k)
+      cur.current = next
+      setV(next)
+      if (k < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [key, reduced, ms])
+  return v
 }
 
-/* Hero */
-.sb-hero { position: relative; min-height: 100svh; display: grid; }
-.sb-hero-frame {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  background: #0f172a;
-  will-change: clip-path;
-}
-.sb-hero-img { position: absolute; inset: -6% 0 0 0; }
-.sb-hero-img .sb-pic { position: absolute; inset: 0; }
-.sb-hero-frame::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(7, 9, 14, 0.5) 0%,
-    rgba(7, 9, 14, 0.15) 30%,
-    rgba(7, 9, 14, 0.3) 55%,
-    rgba(7, 9, 14, 0.85) 100%
-  );
-}
-.sb-hero-copy {
-  position: relative;
-  z-index: 2;
-  align-self: end;
-  justify-self: center;
-  text-align: center;
-  color: #ffffff;
-  padding: 0 18px clamp(56px, 9vh, 96px);
-  display: grid;
-  justify-items: center;
-  gap: 18px;
-}
-.sb-hero h1 {
-  font-family: var(--sb-serif);
-  font-weight: 400;
-  font-size: clamp(44px, 7.5vw, 92px);
-  line-height: 0.98;
-  letter-spacing: -0.025em;
-  text-shadow: 0 2px 32px rgba(0, 0, 0, 0.4);
-}
-.sb-hero p {
-  max-width: 50ch;
-  font-size: 15px;
-  line-height: 1.6;
-  opacity: 0.9;
-}
-.sb-plate {
-  position: absolute;
-  z-index: 3;
-  right: max(24px, 6vw);
-  top: 26%;
-  width: 228px;
-  padding: 12px;
-  border-radius: 22px;
-  color: #0f172a;
-  background: rgba(255, 255, 255, 0.8);
-  -webkit-backdrop-filter: blur(18px) saturate(1.5);
-  backdrop-filter: blur(18px) saturate(1.5);
-  box-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.5);
-  display: grid;
-  gap: 8px;
-}
-.sb-plate .sb-pic { height: 104px; border-radius: 14px; }
-.sb-plate b { font-size: 13px; font-weight: 600; }
-.sb-plate small { font-size: 11px; color: #475569; }
-.sb-plate-bars {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  font-size: 10px;
-  color: #475569;
-}
-.sb-bar {
-  height: 4px;
-  border-radius: 9px;
-  background: rgba(15, 23, 42, 0.1);
-  overflow: hidden;
-  margin-top: 3px;
-}
-.sb-bar i {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--sb-accent);
-  transform-origin: left;
-}
-.sb-scrollcue {
-  position: absolute;
-  z-index: 3;
-  left: 50%;
-  bottom: 22px;
-  transform: translateX(-50%);
-  width: 24px;
-  height: 36px;
-  border-radius: 99px;
-  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.6);
-}
-.sb-scrollcue::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 7px;
-  width: 3px;
-  height: 8px;
-  margin-left: -1.5px;
-  border-radius: 9px;
-  background: #ffffff;
-  animation: sb-cue 1.8s ease-in-out infinite;
-}
-@keyframes sb-cue {
-  0% { opacity: 0; transform: translateY(0); }
-  30% { opacity: 1; }
-  100% { opacity: 0; transform: translateY(12px); }
+function useSeen(ref: { current: Element | null }, margin = "0px 0px -12% 0px") {
+  const [seen, setSeen] = React.useState(false)
+  React.useEffect(() => {
+    const el = ref.current
+    if (!el || seen) return
+    if (typeof IntersectionObserver === "undefined") {
+      setSeen(true)
+      return
+    }
+    const io = new IntersectionObserver((es) => es.some((e) => e.isIntersecting) && setSeen(true), { rootMargin: margin })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [ref, seen, margin])
+  return seen
 }
 
-/* Features */
-.sb-feats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: clamp(24px, 4vw, 56px);
-  padding-block: clamp(64px, 9vw, 110px) clamp(40px, 6vw, 70px);
-}
-.sb-feat { display: grid; justify-items: center; text-align: center; gap: 12px; }
-.sb-feat-art {
-  position: relative;
-  width: 150px;
-  height: 114px;
-  display: grid;
-  place-items: center;
-}
-.sb-feat-art svg { transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
-.sb-feat:hover .sb-feat-art svg { transform: translateY(-6px) rotate(-3deg) scale(1.05); }
-.sb-feat h3 { font-size: 15px; font-weight: 600; }
-.sb-feat p { font-size: 13.5px; color: var(--sb-muted); max-width: 32ch; line-height: 1.5; }
-.sb-tag {
-  position: absolute;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 99px;
-  background: var(--sb-card);
-  box-shadow: var(--sb-shadow);
-  white-space: nowrap;
-}
-
-/* Planner / The 3 Stages */
-.sb-plan-outer { padding-inline: clamp(8px, 1.4vw, 20px); }
-.sb-plan {
-  position: relative;
-  border-radius: clamp(24px, 3vw, 42px);
-  background: var(--sb-surface);
-  min-height: min(820px, calc(100svh - 84px));
-  display: grid;
-  align-content: center;
-  padding: clamp(32px, 4vw, 52px) 0;
-  overflow: hidden;
-}
-.sb-tabs {
-  position: relative;
-  justify-self: center;
-  display: inline-flex;
-  gap: 2px;
-  padding: 4px;
-  border-radius: 999px;
-  background: var(--sb-card);
-  box-shadow: inset 0 0 0 1px var(--sb-line);
-  margin-bottom: clamp(24px, 4vw, 44px);
-  max-width: calc(100% - 24px);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.sb-tab {
-  position: relative;
-  z-index: 1;
-  height: 34px;
-  padding: 0 16px;
-  border-radius: 999px;
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--sb-muted);
-  white-space: nowrap;
-  border: none;
-  background: none;
-  cursor: pointer;
-  transition: color 0.3s;
-}
-.sb-tab[aria-selected="true"] { color: #ffffff; }
-.sb-tab-ind {
-  position: absolute;
-  z-index: 0;
-  top: 4px;
-  height: 34px;
-  border-radius: 999px;
-  background: var(--sb-accent);
-  transition: left 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-  overflow: hidden;
-}
-.sb-tab-ind i {
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.18);
-  transform-origin: left;
-  transform: scaleX(var(--sb-tp, 0));
-}
-.sb-plan-grid {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: clamp(24px, 6vw, 96px);
-  padding-inline: clamp(20px, 6vw, 96px);
-}
-.sb-plan-copy { position: relative; display: grid; }
-.sb-plan-pane {
-  grid-area: 1 / 1;
-  display: grid;
-  align-content: center;
-  gap: 14px;
-  transition: opacity 0.5s, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.5s;
-}
-.sb-plan-pane[data-on="false"] {
-  opacity: 0;
-  transform: translateY(18px);
-  filter: blur(6px);
-  pointer-events: none;
-}
-.sb-eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--sb-accent);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-.sb-eyebrow i { width: 4px; height: 12px; border-radius: 2px; background: var(--sb-accent); }
-.sb-plan-copy h3 {
-  font-family: var(--sb-serif);
-  font-weight: 400;
-  font-size: clamp(34px, 4.2vw, 48px);
-  line-height: 1.05;
-  letter-spacing: -0.02em;
-}
-.sb-plan-copy p { color: var(--sb-muted); max-width: 44ch; font-size: 14.5px; line-height: 1.6; }
-.sb-points {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  margin-top: 22px;
-  max-width: 460px;
-  list-style: none;
-  padding: 0;
-}
-.sb-points li { display: grid; gap: 8px; font-size: 13px; font-weight: 500; }
-.sb-points svg { color: var(--sb-accent); }
-.sb-plan-progress { display: flex; gap: 6px; margin-top: 10px; }
-.sb-plan-progress span {
-  height: 3px;
-  width: 32px;
-  border-radius: 9px;
-  background: var(--sb-line);
-  overflow: hidden;
-}
-.sb-plan-progress span i {
-  display: block;
-  height: 100%;
-  background: var(--sb-accent);
-  transform-origin: left;
-  transition: transform 0.3s;
-}
-
-/* Phone Mockup */
-.sb-phone {
-  position: relative;
-  width: 290px;
-  height: 590px;
-  flex: none;
-  border-radius: 52px;
-  padding: 10px;
-  background: linear-gradient(145deg, #1e293b, #090d16);
-  box-shadow: inset 0 0 0 1.5px #334155, 0 40px 80px -30px rgba(15, 23, 42, 0.6), 0 10px 24px -12px rgba(0, 0, 0, 0.4);
-}
-.sb-phone::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 20px;
-  width: 88px;
-  height: 24px;
-  margin-left: -44px;
-  border-radius: 99px;
-  background: #000000;
-  z-index: 5;
-}
-.sb-screen {
-  position: relative;
-  height: 100%;
-  border-radius: 42px;
-  overflow: hidden;
-  background: #ffffff;
-  color: #0f172a;
-  font-size: 11.5px;
-}
-.sb-root[data-theme="dark"] .sb-screen {
-  background: #0d121c;
-  color: #f8fafc;
-}
-.sb-status {
-  display: flex;
-  justify-content: space-between;
-  padding: 16px 26px 0;
-  font-size: 11px;
-  font-weight: 600;
-  height: 44px;
-}
-.sb-scr {
-  position: absolute;
-  inset: 44px 0 0;
-  padding: 6px 14px 14px;
-  display: grid;
-  align-content: start;
-  gap: 10px;
-  transition: opacity 0.45s, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.45s;
-}
-.sb-scr[data-on="false"] {
-  opacity: 0;
-  transform: scale(0.94) translateY(16px);
-  filter: blur(4px);
-  pointer-events: none;
-  visibility: hidden;
-}
-.sb-scr h4 { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
-.sb-ring-row {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 12px;
-  align-items: center;
-  padding: 10px;
-  border-radius: 16px;
-  background: var(--sb-surface);
-}
-.sb-sub { font-size: 10px; color: var(--sb-muted); }
-
-/* Showcase / Coverflow */
-.sb-flow {
-  position: relative;
-  height: clamp(340px, 42vw, 430px);
-  margin-top: clamp(28px, 5vw, 56px);
-  touch-action: pan-y;
-  cursor: grab;
-  user-select: none;
-  -webkit-user-select: none;
-  outline: none;
-}
-.sb-flow:active { cursor: grabbing; }
-.sb-card {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: var(--sb-cw, 280px);
-  height: calc(var(--sb-cw, 280px) * 1.18);
-  margin: calc(var(--sb-cw, 280px) * -0.59) 0 0 calc(var(--sb-cw, 280px) * -0.5);
-  border-radius: 20px;
-  overflow: hidden;
-  will-change: transform;
-  box-shadow: 0 20px 40px -22px rgba(15, 23, 42, 0.5);
-}
-.sb-card .sb-pic { position: absolute; inset: 0; }
-.sb-card[data-center="true"] { box-shadow: 0 32px 64px -24px rgba(15, 23, 42, 0.7); }
-.sb-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--sb-bg);
-  opacity: var(--sb-fade, 0);
-  pointer-events: none;
-}
-.sb-heart {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: none;
-  display: grid;
-  place-items: center;
-  background: rgba(255, 255, 255, 0.9);
-  color: #0f172a;
-  transform: scale(0);
-  transition: transform 0.35s cubic-bezier(0.3, 1.6, 0.5, 1);
-  cursor: pointer;
-}
-.sb-card[data-center="true"] .sb-heart { transform: scale(1); }
-.sb-heart[aria-pressed="true"] { color: #ef4444; }
-.sb-caption {
-  display: grid;
-  justify-items: center;
-  gap: 8px;
-  margin-top: 22px;
-  min-height: 64px;
-  text-align: center;
-}
-.sb-caption h3 { font-size: 16px; font-weight: 600; margin: 0; }
-.sb-pager {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  margin-top: 18px;
-}
-.sb-pager-dots {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border-radius: 99px;
-  background: var(--sb-surface);
-}
-.sb-pd {
-  position: relative;
-  width: 6px;
-  height: 6px;
-  border-radius: 99px;
-  background: color-mix(in srgb, var(--sb-ink) 22%, transparent);
-  overflow: hidden;
-  transition: width 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.sb-pd[aria-current="true"] { width: 28px; }
-.sb-pd[aria-current="true"] i {
-  position: absolute;
-  inset: 0;
-  background: var(--sb-ink);
-  transform-origin: left;
-  animation: sb-fill var(--sb-dur, 5s) linear forwards;
-}
-.sb-pager[data-paused="true"] .sb-pd i { animation-play-state: paused; }
-@keyframes sb-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-.sb-round {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  border: none;
-  background: var(--sb-surface);
-  color: var(--sb-ink);
-  cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
-}
-.sb-round:hover { background: var(--sb-line); transform: scale(1.06); }
-
-/* Bento Grid */
-.sb-bento-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 24px;
-  flex-wrap: wrap;
-  margin-bottom: clamp(24px, 4vw, 40px);
-}
-.sb-bento {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-}
-.sb-tile {
-  position: relative;
-  min-width: 0;
-  border-radius: 24px;
-  background: var(--sb-surface);
-  padding: 22px;
-  overflow: hidden;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-content: space-between;
-  gap: 14px;
-  min-height: 310px;
-}
-.sb-tile-t { font-size: 13px; color: var(--sb-muted); line-height: 1.5; margin: 0; }
-.sb-tile-t b { color: var(--sb-ink); font-weight: 600; }
-.sb-wide { grid-column: span 2; }
-.sb-search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 40px;
-  padding: 0 14px;
-  border-radius: 14px;
-  background: var(--sb-card);
-  box-shadow: inset 0 0 0 1px var(--sb-line);
-  color: var(--sb-muted);
-}
-.sb-search input {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  background: none;
-  outline: none;
-  font-size: 13.5px;
-  color: var(--sb-ink);
-}
-.sb-filters { display: flex; flex-wrap: wrap; gap: 6px; }
-.sb-results {
-  display: grid;
-  gap: 6px;
-  height: 156px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  align-content: start;
-}
-.sb-result {
-  display: grid;
-  grid-template-columns: 42px 1fr auto;
-  gap: 10px;
-  align-items: center;
-  padding: 6px;
-  border-radius: 12px;
-  background: var(--sb-card);
-}
-.sb-result .sb-pic { width: 42px; height: 42px; border-radius: 9px; }
-.sb-result b { font-size: 12.5px; font-weight: 600; display: block; }
-.sb-marquee {
-  display: grid;
-  gap: 8px;
-  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
-  margin-inline: -22px;
-}
-.sb-mrow {
-  display: flex;
-  gap: 6px;
-  width: max-content;
-  animation: sb-mq 38s linear infinite;
-}
-.sb-mrow[data-rev="true"] { animation-direction: reverse; animation-duration: 44s; }
-.sb-marquee:hover .sb-mrow, .sb-marquee:focus-within .sb-mrow { animation-play-state: paused; }
-@keyframes sb-mq { to { transform: translateX(-50%); } }
-.sb-quote {
-  font-family: var(--sb-serif);
-  font-size: clamp(20px, 2.2vw, 26px);
-  line-height: 1.22;
-  letter-spacing: -0.015em;
-  margin: 0;
-}
-.sb-who { display: flex; align-items: center; gap: 12px; font-size: 12px; }
-.sb-who .sb-pic { width: 38px; height: 38px; border-radius: 50%; }
-.sb-who small { display: block; color: var(--sb-muted); font-size: 11px; }
-
-/* Drill / Interactive Simulation */
-.sb-drill {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: clamp(28px, 4vw, 44px);
-}
-.sb-drill-phone {
-  grid-row: span 2;
-  display: grid;
-  justify-items: center;
-  align-content: space-between;
-  gap: 18px;
-  padding: 28px 18px 18px;
-}
-.sb-drill-phone .sb-phone { width: 254px; height: 516px; }
-.sb-stepper {
-  display: inline-grid;
-  grid-template-columns: 36px 56px 36px;
-  align-items: center;
-  justify-items: center;
-  padding: 4px;
-  border-radius: 16px;
-  background: var(--sb-card);
-}
-.sb-stepper output { display: grid; justify-items: center; line-height: 1.1; }
-.sb-stepper output b { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.sb-stepper output small { font-size: 10px; color: var(--sb-muted); }
-.sb-switch { display: inline-flex; align-items: center; gap: 10px; font-size: 12.5px; font-weight: 500; }
-.sb-switch button {
-  position: relative;
-  width: 48px;
-  height: 28px;
-  border-radius: 99px;
-  border: none;
-  background: var(--sb-accent);
-  cursor: pointer;
-}
-.sb-switch button i {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-  transition: transform 0.4s cubic-bezier(0.3, 1.4, 0.5, 1);
-}
-.sb-switch button[aria-checked="true"] i { transform: translateX(20px); }
-.sb-switch span { opacity: 0.5; transition: opacity 0.3s; }
-.sb-switch span[data-on="true"] { opacity: 1; font-weight: 600; }
-
-/* Categories */
-.sb-cats {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 14px;
-  margin-top: clamp(28px, 4vw, 48px);
-}
-.sb-cat {
-  position: relative;
-  flex: 0 0 calc((100% - 56px) / 5);
-  aspect-ratio: 1 / 1.04;
-  border-radius: 22px;
-  background: var(--sb-surface);
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  transition: background 0.35s;
-  text-decoration: none;
-  color: inherit;
-}
-.sb-cat:hover { background: var(--sb-sky); }
-.sb-cat-spin { display: grid; place-items: center; width: 62%; aspect-ratio: 1; }
-.sb-cat .sb-pic {
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  box-shadow: 0 18px 32px -16px rgba(15, 23, 42, 0.6), inset 0 0 0 4px rgba(255, 255, 255, 0.9);
-  transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.sb-cat:hover .sb-pic { transform: rotate(26deg) scale(1.08) translateY(-6px); }
-.sb-cat-l {
-  position: absolute;
-  left: 14px;
-  right: 14px;
-  bottom: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12.5px;
-  font-weight: 600;
-}
-.sb-cat-l small {
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--sb-muted);
-  opacity: 0;
-  transform: translateX(-6px);
-  transition: opacity 0.3s, transform 0.3s;
-}
-.sb-cat:hover .sb-cat-l small { opacity: 1; transform: none; }
-
-/* Resources */
-.sb-res {
-  display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-  gap: clamp(24px, 6vw, 80px);
-  align-items: start;
-}
-.sb-articles { display: grid; gap: 6px; min-height: 272px; align-content: start; }
-.sb-article {
-  display: grid;
-  grid-template-columns: 96px 1fr auto;
-  gap: 14px;
-  align-items: center;
-  padding: 8px;
-  border-radius: 16px;
-  text-decoration: none;
-  color: inherit;
-  transition: background 0.3s;
-}
-.sb-article:hover { background: var(--sb-surface); }
-.sb-article .sb-pic { height: 68px; border-radius: 12px; }
-.sb-article b { font-size: 13.5px; font-weight: 600; display: block; line-height: 1.35; }
-.sb-article small { font-size: 11px; color: var(--sb-muted); }
-.sb-kinds { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
-.sb-kind {
-  display: grid;
-  gap: 2px;
-  padding: 12px;
-  border-radius: 14px;
-  text-align: left;
-  font-size: 13px;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-  background: var(--sb-surface);
-  color: var(--sb-ink);
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-.sb-kind small { font-weight: 400; font-size: 11px; color: var(--sb-muted); }
-.sb-kind:hover { transform: translateY(-2px); }
-.sb-kind[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--sb-accent); }
-
-/* CTA */
-.sb-cta {
-  position: relative;
-  text-align: center;
-  display: grid;
-  justify-items: center;
-  gap: 18px;
-  padding-block: clamp(110px, 15vw, 190px);
-}
-.sb-cta .sb-h2 .sb-wi { color: color-mix(in srgb, var(--sb-ink) var(--sb-lit, 100%), transparent); }
-.sb-orbit {
-  position: absolute;
-  border-radius: 50%;
-  box-shadow: 0 20px 40px -18px rgba(15, 23, 42, 0.55), inset 0 0 0 3px rgba(255, 255, 255, 0.85);
-  pointer-events: none;
-}
-
-/* Footer */
-.sb-foot {
-  margin: 0 auto clamp(12px, 2vw, 24px);
-  width: min(1200px, 100% - 24px);
-  border-radius: 30px;
-  background: var(--sb-surface);
-  padding: clamp(28px, 4vw, 48px);
-}
-.sb-foot-top { display: grid; grid-template-columns: 1.2fr repeat(4, 1fr); gap: 24px; }
-.sb-foot h4 { font-size: 12px; font-weight: 600; color: var(--sb-muted); margin-bottom: 12px; }
-.sb-foot ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
-.sb-foot li a {
-  display: inline-block;
-  font-size: 13px;
-  color: inherit;
-  text-decoration: none;
-  transition: opacity 0.2s, transform 0.2s;
-}
-.sb-foot li a:hover { opacity: 0.6; transform: translateX(2px); }
-.sb-foot-word {
-  font-family: var(--sb-serif);
-  font-size: clamp(64px, 15vw, 190px);
-  line-height: 0.8;
-  letter-spacing: -0.04em;
-  margin-top: clamp(28px, 5vw, 60px);
-  color: color-mix(in srgb, var(--sb-ink) 9%, transparent);
-  user-select: none;
-  white-space: nowrap;
-  overflow: hidden;
-}
-.sb-foot-bot {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: clamp(40px, 7vw, 90px);
-  font-size: 12px;
-  color: var(--sb-muted);
-}
-.sb-foot-bot div { display: flex; gap: 14px; align-items: center; }
-
-/* Responsive */
-@media (max-width: 960px) {
-  .sb-plan-grid { grid-template-columns: 1fr; justify-items: center; text-align: left; }
-  .sb-plan-copy { width: 100%; max-width: 520px; }
-  .sb-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .sb-wide { grid-column: 1 / -1; }
-  .sb-cat { flex-basis: calc((100% - 28px) / 3); }
-  .sb-res { grid-template-columns: 1fr; }
-  .sb-foot-top { grid-template-columns: repeat(2, 1fr); }
-  .sb-foot-top > div:first-child { grid-column: 1 / -1; }
-  .sb-plate { display: none; }
-}
-
-@media (max-width: 720px) {
-  .sb-nav { grid-template-columns: auto 1fr auto; padding-left: 16px; }
-  .sb-nav-links { display: none; }
-  .sb-menu-btn { display: grid; }
-  .sb-logo { grid-column: 1; grid-row: 1; }
-  .sb-nav-end { grid-column: 3; }
-  .sb-nav-end .sb-btn { display: none; }
-  .sb-feats { grid-template-columns: 1fr; gap: 40px; }
-  .sb-bento, .sb-drill { grid-template-columns: minmax(0, 1fr); }
-  .sb-drill-phone { grid-row: auto; }
-  .sb-cat { flex-basis: calc((100% - 14px) / 2); }
-  .sb-kinds { grid-template-columns: 1fr 1fr 1fr; }
-  .sb-article { grid-template-columns: 76px 1fr; }
-  .sb-points { grid-template-columns: 1fr; }
-  .sb-phone { transform: scale(0.92); transform-origin: top center; margin-bottom: -46px; }
-}
-`
-
-// ---------------- SVG Illustrations ----------------
-
-function FeynmanLoopArt() {
+function Icon({ d, size = 16, stroke = 1.6, className }: { d: string; size?: number; stroke?: number; className?: string }) {
   return (
-    <svg width="150" height="114" viewBox="0 0 150 114" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Blackboard easel frame */}
-      <rect x="25" y="16" width="100" height="66" rx="8" fill="#1e293b" stroke="#334155" strokeWidth="3" />
-      <rect x="30" y="21" width="90" height="56" rx="4" fill="#0f172a" />
-      {/* Easel legs */}
-      <path d="M42 82L30 106M108 82L120 106M75 82V106" stroke="#475569" strokeWidth="3" strokeLinecap="round" />
-      {/* Feynman Diagram squiggle on blackboard */}
-      <path d="M42 48Q52 32 62 48T82 48T102 48" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="1 1" />
-      <circle cx="42" cy="48" r="3.5" fill="#38bdf8" />
-      <circle cx="102" cy="48" r="3.5" fill="#38bdf8" />
-      <path d="M72 32L78 38L72 44" stroke="#f43f5e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      {/* Chalk Tray */}
-      <rect x="52" y="74" width="22" height="4" rx="2" fill="#ffffff" opacity="0.9" />
-      <rect x="78" y="74" width="14" height="4" rx="2" fill="#facc15" />
+    <svg className={"ttl-svg " + (className ?? "")} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={d} />
     </svg>
   )
 }
 
-function CognitiveShieldArt() {
+const I = {
+  check: "M5 12.5l4.2 4.2L19 7",
+  plus: "M12 5v14M5 12h14",
+  arrow: "M5 12h14M13 6l6 6-6 6",
+  down: "M6 9l6 6 6-6",
+  close: "M6 6l12 12M18 6L6 18",
+  menu: "M4 7h16M4 12h16M4 17h16",
+  brain: "M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04z M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04z",
+  shield: "M12 3l7 3v6c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6z M9 12l2 2 4-4",
+  grid: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z",
+  swap: "M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7",
+  list: "M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01",
+  doc: "M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6",
+  sparkles: "M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3z",
+  cpu: "M4 4h16v16H4zM9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3",
+}
+
+function BrainMark({ size = 22 }: { size?: number }) {
   return (
-    <svg width="150" height="114" viewBox="0 0 150 114" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Outer shield boundary */}
-      <path d="M75 14L114 28V62C114 85 75 102 75 102C75 102 36 85 36 62V28L75 14Z" fill="#1e293b" stroke="#3b82f6" strokeWidth="2.5" />
-      {/* Safety firewall lock */}
-      <rect x="63" y="52" width="24" height="20" rx="5" fill="#3b82f6" />
-      <path d="M68 52V44C68 40.134 71.134 37 75 37C78.866 37 82 40.134 82 44V52" stroke="#60a5fa" strokeWidth="2.5" strokeLinecap="round" />
-      <circle cx="75" cy="62" r="2.5" fill="#ffffff" />
-      {/* Neural Synapse Dots */}
-      <circle cx="50" cy="48" r="3" fill="#38bdf8" opacity="0.8" />
-      <circle cx="100" cy="48" r="3" fill="#38bdf8" opacity="0.8" />
-      <circle cx="52" cy="72" r="2.5" fill="#a855f7" opacity="0.8" />
-      <circle cx="98" cy="72" r="2.5" fill="#a855f7" opacity="0.8" />
-      <path d="M50 48L63 56M100 48L87 56" stroke="#38bdf8" strokeWidth="1.5" strokeDasharray="2 2" opacity="0.7" />
+    <svg className="ttl-svg" width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
+      <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--ttl-accent)" />
+      <path d="M10 9c0-1.7 1.3-3 3-3 .6 0 1.2.2 1.7.5.5-.3 1.1-.5 1.7-.5 1.7 0 3 1.3 3 3 0 .4-.1.8-.2 1.1 1.4.5 2.4 1.8 2.4 3.4 0 1.4-.8 2.6-2 3.1.1.4.1.7.1 1.1 0 2.2-1.8 4-4 4-.6 0-1.2-.1-1.7-.4-.5.3-1.1.4-1.7.4-2.2 0-4-1.8-4-4 0-.4 0-.7.1-1.1-1.2-.5-2-1.7-2-3.1 0-1.6 1-2.9 2.4-3.4-.1-.3-.2-.7-.2-1.1z" fill="none" stroke="var(--ttl-page)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="16" cy="15" r="2.2" fill="var(--ttl-gold)" />
+      <line x1="16" y1="10" x2="16" y2="20" stroke="var(--ttl-gold)" strokeWidth="1.4" strokeDasharray="1.5 2" />
     </svg>
   )
 }
 
-function TesGaugeArt() {
-  return (
-    <svg width="150" height="114" viewBox="0 0 150 114" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Circular dial background */}
-      <circle cx="75" cy="57" r="42" fill="#1e293b" stroke="#334155" strokeWidth="3" />
-      {/* Dial arc */}
-      <path d="M46 78A36 36 0 1 1 104 78" stroke="#3b82f6" strokeWidth="6" strokeLinecap="round" />
-      {/* Needle pointing to top score */}
-      <path d="M75 57L94 36" stroke="#ef4444" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="75" cy="57" r="5" fill="#ffffff" />
-      {/* Delta symbol Δ */}
-      <text x="75" y="80" textAnchor="middle" fill="#38bdf8" fontSize="12" fontWeight="700">Δ TES</text>
-    </svg>
-  )
-}
-
-// ---------------- Supporting Components ----------------
-
-function Words({ text }: { text: string }) {
-  const parts = text.split("\n")
+function Marked({ text, wordClass }: { text: string; wordClass?: string }) {
+  const words = markedWords(text)
   return (
     <>
-      {parts.map((p, pi) => (
-        <span key={pi} className="sb-w">
-          {p.split(/\s+/).filter(Boolean).map((w, wi) => (
-            <span key={wi} className="sb-w" style={{ marginRight: "0.22em" }}>
-              <span className="sb-wi">{w}</span>
-            </span>
-          ))}
-          {pi < parts.length - 1 && <br />}
-        </span>
+      {words.map((w, i) => (
+        <React.Fragment key={i}>
+          <span className={(wordClass ?? "") + (w.mark ? " ttl-gold" : "")}>{w.word}</span>
+          {w.tail ? <span className={wordClass}>{w.tail}</span> : null}
+          {w.br ? <br /> : w.glue || i === words.length - 1 ? null : " "}
+        </React.Fragment>
       ))}
     </>
   )
 }
 
-function Pic({
-  shot: s,
-  w,
-  h,
-  eager,
-  className,
-  style
+function Nav({
+  brand,
+  logo,
+  nav,
+  go,
+  scrolled,
+  isAuthenticated,
+  user,
+  onOpenAuth,
+  onGoToDashboard,
+  onStart,
 }: {
-  shot: SubjectShot
-  w: number
-  h?: number
-  eager?: boolean
-  className?: string
-  style?: React.CSSProperties
+  brand: string
+  logo?: React.ReactNode
+  nav: TtlNav
+  go: (href?: string) => (e: React.MouseEvent) => void
+  scrolled: boolean
+  isAuthenticated: boolean
+  user: any
+  onOpenAuth: (mode?: 'login' | 'register') => void
+  onGoToDashboard: () => void
+  onStart: () => void
 }) {
-  const [state, setState] = React.useState("load" as "load" | "ok" | "failed")
-  const url = s.src + `?w=${w}${h ? `&h=${h}&fit=crop` : ""}&auto=format&fit=crop&q=80`
+  const [open, setOpen] = React.useState(false)
+  const [sheet, setSheet] = React.useState(false)
+  const boxRef = React.useRef(null as HTMLDivElement | null)
 
-  return (
-    <div
-      className={"sb-pic " + (className || "")}
-      data-state={state}
-      style={{ ...style, "--tone": s.tone || "#334155" } as React.CSSProperties}
-    >
-      <img
-        src={url}
-        alt={s.alt || ""}
-        loading={eager ? "eager" : "lazy"}
-        onLoad={() => setState("ok")}
-        onError={() => setState("failed")}
-        style={{ objectPosition: s.focus || "50% 50%" }}
-      />
-    </div>
-  )
-}
+  React.useEffect(() => {
+    if (!open && !sheet) return
+    const away = (e: PointerEvent) => {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) {
+        setOpen(false)
+        setSheet(false)
+      }
+    }
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false)
+        setSheet(false)
+      }
+    }
+    document.addEventListener("pointerdown", away)
+    document.addEventListener("keydown", esc)
+    return () => {
+      document.removeEventListener("pointerdown", away)
+      document.removeEventListener("keydown", esc)
+    }
+  }, [open, sheet])
 
-function PhoneStatusBar() {
-  return (
-    <div className="sb-status" aria-hidden="true">
-      <span>9:41</span>
-      <span style={{ display: "flex", gap: 5, alignItems: "center" }}>
-        <svg width="15" height="10" viewBox="0 0 16 10">
-          <path d="M1 9h2V7H1zM5 9h2V5H5zM9 9h2V3H9zM13 9h2V1h-2z" fill="currentColor" />
-        </svg>
-        <svg width="20" height="10" viewBox="0 0 22 11">
-          <rect x=".5" y=".5" width="18" height="10" rx="3" fill="none" stroke="currentColor" opacity=".5" />
-          <rect x="2" y="2" width="13" height="7" rx="1.6" fill="currentColor" />
-          <rect x="19.5" y="3.5" width="1.6" height="4" rx=".8" fill="currentColor" opacity=".5" />
-        </svg>
-      </span>
-    </div>
-  )
-}
-
-// ---------------- Planner Phone Screens ----------------
-
-function PlannerPhoneMockup({ tab }: { tab: number }) {
-  const [checkedConcepts, setCheckedConcepts] = React.useState<string[]>([
-    "De Broglie Hypothesis",
-    "Wavefunction Superposition"
-  ])
-
-  const toggleConcept = (c: string) => {
-    setCheckedConcepts((prev) =>
-      prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]
-    )
+  const close = (href?: string) => (e: React.MouseEvent) => {
+    setOpen(false)
+    setSheet(false)
+    go(href)(e)
   }
 
+  const products = nav.products ?? []
+
   return (
-    <div className="sb-phone">
-      <div className="sb-screen">
-        <PhoneStatusBar />
-
-        {/* Screen 0: Baseline Diagnostic Test */}
-        <div className="sb-scr" data-on={tab === 0} aria-hidden={tab !== 0}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <h4>Cold Baseline Test</h4>
-            <span className="sb-sub">Step 01 • Teacher 120B</span>
-          </div>
-
-          <div className="sb-ring-row">
-            <div style={{ position: "relative", width: 56, height: 56 }}>
-              <svg width="56" height="56" viewBox="0 0 56 56">
-                <circle cx="28" cy="28" r="23" fill="none" stroke="var(--sb-line)" strokeWidth="5" />
-                <circle
-                  cx="28"
-                  cy="28"
-                  r="23"
-                  fill="none"
-                  stroke="#ef4444"
-                  strokeWidth="5"
-                  strokeLinecap="round"
-                  strokeDasharray="144"
-                  strokeDashoffset="122"
-                  transform="rotate(-90 28 28)"
-                />
-              </svg>
-              <span
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  display: "grid",
-                  placeItems: "center",
-                  fontSize: 12,
-                  fontWeight: 700
-                }}
-              >
-                15%
-              </span>
+    <header className="ttl-nav" data-scrolled={scrolled || undefined}>
+      <div className="ttl-nav-in" ref={boxRef}>
+        <a href="#" className="ttl-brand" onClick={close("#top")}>
+          {logo ?? <BrainMark />}
+          <span>{brand}</span>
+        </a>
+        <nav className="ttl-nav-links" aria-label="Primary">
+          {products.length ? (
+            <div className="ttl-prod" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+              <button type="button" className="ttl-nav-link" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+                Methodology <Icon d={I.down} size={13} className="ttl-caret" />
+              </button>
+              <div className="ttl-prod-panel" data-open={open || undefined}>
+                {products.map((p, i) => (
+                  <a key={p.label} href={p.href ?? "#"} className="ttl-prod-item" onClick={close(p.href)} tabIndex={open ? 0 : -1}>
+                    <span className="ttl-prod-ic">
+                      <Icon d={[I.brain, I.shield, I.sparkles][i % 3]} size={17} />
+                    </span>
+                    <span>
+                      <b>{p.label}</b>
+                      <small>{p.text}</small>
+                    </span>
+                  </a>
+                ))}
+              </div>
             </div>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 12 }}>Untaught Child Agent</div>
-              <p className="sb-sub" style={{ margin: "2px 0 0" }}>
-                Zero document access. Has not received student guidance yet.
-              </p>
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gap: 6, marginTop: 4 }}>
-            {[
-              { q: "Explain why electrons exhibit interference patterns.", st: "Failed (0/10)" },
-              { q: "What determines de Broglie wavelength?", st: "Failed (2/10)" },
-              { q: "How does photon energy relate to frequency?", st: "Partial (4/10)" }
-            ].map((item, i) => (
-              <div
-                key={i}
-                style={{
-                  padding: "8px 10px",
-                  borderRadius: 12,
-                  background: "var(--sb-surface)",
-                  display: "grid",
-                  gap: 3
-                }}
+          ) : null}
+          {(nav.links ?? []).map((l) => (
+            <a key={l.label} href={l.href ?? "#"} className="ttl-nav-link" onClick={close(l.href)}>
+              {l.label}
+            </a>
+          ))}
+        </nav>
+        <div className="ttl-nav-end">
+          <ThemeToggle />
+          <div className="ttl-nav-sep" />
+          {isAuthenticated ? (
+            <button
+              type="button"
+              className="ttl-btn ttl-btn-lilac ttl-btn-sm"
+              onClick={onGoToDashboard}
+            >
+              Dashboard ({user?.name?.split(" ")[0] || "Student"})
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="ttl-nav-link ttl-hide-sm"
+                onClick={() => onOpenAuth('login')}
               >
-                <div style={{ fontSize: 11, fontWeight: 600 }}>{item.q}</div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9.5 }}>
-                  <span style={{ color: "#ef4444", fontWeight: 600 }}>{item.st}</span>
-                  <span className="sb-sub">Needs Teaching</span>
+                Sign in
+              </button>
+              <button
+                type="button"
+                className="ttl-btn ttl-btn-dark ttl-btn-sm"
+                onClick={onStart}
+              >
+                Launch Studio
+              </button>
+            </>
+          )}
+          <button type="button" className="ttl-burger" aria-label={sheet ? "Close menu" : "Open menu"} aria-expanded={sheet} onClick={() => setSheet((s) => !s)}>
+            <Icon d={sheet ? I.close : I.menu} size={18} />
+          </button>
+        </div>
+        <div className="ttl-sheet" data-open={sheet || undefined}>
+          {[...products.map((p) => ({ label: p.label, href: p.href })), ...(nav.links ?? [])].map((l) => (
+            <a key={l.label} href={l.href ?? "#"} onClick={close(l.href)} tabIndex={sheet ? 0 : -1}>
+              {l.label}
+              <Icon d={I.arrow} size={15} />
+            </a>
+          ))}
+          {isAuthenticated ? (
+            <button
+              type="button"
+              className="ttl-btn ttl-btn-lilac w-full mt-2"
+              onClick={() => {
+                setSheet(false)
+                onGoToDashboard()
+              }}
+            >
+              Go to Dashboard
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="ttl-btn ttl-btn-dark w-full mt-2"
+              onClick={() => {
+                setSheet(false)
+                onOpenAuth('login')
+              }}
+            >
+              Sign In / Register
+            </button>
+          )}
+        </div>
+      </div>
+      <span className="ttl-progress" aria-hidden="true" />
+    </header>
+  )
+}
+
+type View = "overview" | "move" | "activity"
+type Step = "edit" | "review" | "sending" | "done" | "error"
+
+const RANGES = [
+  { label: "10m", seed: 11, vol: 0.022, drift: 0.0018, delta: "+34.2% Immediate" },
+  { label: "24h", seed: 29, vol: 0.04, drift: 0.004, delta: "+68.5% Consolidated" },
+  { label: "30d", seed: 53, vol: 0.06, drift: 0.011, delta: "+91.8% Permanent" },
+]
+const RANGE_SERIES = RANGES.map((r) => series(r.seed, 36, r.vol, r.drift))
+
+function FeynmanStudio(props: {
+  brand: string
+  subject: string
+  concepts: TtlConcept[]
+  activity: TtlActivity[]
+  colors: string[]
+  reduced: boolean
+  onTransmitExplanation: (t: TtlTransfer) => Promise<boolean>
+  onLaunchFullSession: () => void
+}) {
+  const { concepts, activity, colors, reduced } = props
+  const [view, setView] = React.useState("overview" as View)
+  const [range, setRange] = React.useState(1)
+  const [focus, setFocus] = React.useState("" as string)
+  const [from, setFrom] = React.useState(concepts[0]?.id ?? "")
+  const to = "child_buffer"
+  const [explanation, setExplanation] = React.useState("A photon doesn't travel along a single path; instead, it explores every conceivable path simultaneously through quantum phase interference.")
+  const [memo, setMemo] = React.useState("")
+  const [step, setStep] = React.useState("edit" as Step)
+  const [err, setErr] = React.useState("")
+  const [filter, setFilter] = React.useState("all" as "all" | "in" | "out")
+  const [tip, setTip] = React.useState(-1)
+
+  const avgMastery = concepts.reduce((a, b) => a + b.mastery, 0) / (concepts.length || 1)
+  const eased = useTween([avgMastery, ...concepts.map((a) => a.mastery)], reduced, 900)
+  const shares = percentages(concepts.map((a) => a.mastery))
+  const widths = useTween(concepts.map((a) => (avgMastery ? (a.mastery / (avgMastery * concepts.length)) * 100 : 0)), reduced, 900)
+  const spark = useTween(RANGE_SERIES[range], reduced, 700)
+  const path = sparkPath(spark, 300, 84)
+  const gid = React.useId().replace(/:/g, "")
+
+  const fromConcept = concepts.find((c) => c.id === from) || concepts[0]
+
+  const startTeaching = (id?: string) => {
+    if (id) {
+      setFrom(id)
+    }
+    setStep("edit")
+    setErr("")
+    setView("move")
+  }
+
+  const review = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!explanation.trim() || explanation.length < 10) {
+      setErr("Please provide a substantive explanation to test the child agent.")
+      return
+    }
+    setErr("")
+    setStep("review")
+  }
+
+  const confirm = async () => {
+    setStep("sending")
+    const ok = await props.onTransmitExplanation({ from, to, explanation: explanation.trim(), memo: memo.trim() })
+    setStep(ok ? "done" : "error")
+  }
+
+  const reset = () => {
+    setExplanation("")
+    setMemo("")
+    setStep("edit")
+  }
+
+  const quickChips = [
+    { label: "Microstate Analogy", text: "Think of entropy not as 'disorder', but as the logarithm of available microscopic configurations yielding the same macrostate." },
+    { label: "Feynman Path Integral", text: "The classical trajectory emerges purely because stationary action paths interfere constructively, while neighboring non-classical paths cancel out." },
+    { label: "Transformer Attention", text: "Queries and keys compute dot-product alignment matrices that dynamically route contextual information into value vectors." },
+  ]
+
+  const list = activity.filter((a) => (filter === "all" ? true : filter === "in" ? a.status === "Inquiry" : a.status === "Consolidated" || a.status === "Verified"))
+
+  const navItems: { id: View; label: string; d: string }[] = [
+    { id: "overview", label: "Neural State", d: I.brain },
+    { id: "move", label: "Teach Agent", d: I.swap },
+    { id: "activity", label: "Dialogue Stream", d: I.list },
+  ]
+
+  return (
+    <div className="ttl-dash">
+      <aside className="ttl-side">
+        <div className="ttl-side-brand">
+          <BrainMark size={18} />
+          <span>{props.brand} Neural</span>
+        </div>
+        <div className="ttl-side-label">Workspace</div>
+        {navItems.map((n) => (
+          <button key={n.id} type="button" className="ttl-side-item" data-on={view === n.id || undefined} onClick={() => (n.id === "move" ? startTeaching() : setView(n.id))}>
+            <Icon d={n.d} size={14} />
+            {n.label}
+          </button>
+        ))}
+        <div className="ttl-side-label">Active Concepts</div>
+        {concepts.map((a, i) => (
+          <button
+            key={a.id}
+            type="button"
+            className="ttl-side-acc"
+            data-on={(view === "overview" && focus === a.id) || undefined}
+            onClick={() => {
+              setView("overview")
+              setFocus((f) => (f === a.id ? "" : a.id))
+            }}
+          >
+            <i style={{ background: colors[i % colors.length] }} />
+            <span>{a.name}</span>
+            <small>{formatPercent(eased[i + 1] ?? a.mastery)}</small>
+          </button>
+        ))}
+        <div className="ttl-side-foot">
+          <Icon d={I.doc} size={14} /> Course Ontology
+        </div>
+      </aside>
+
+      <div className="ttl-main">
+        <div className="ttl-crumbs">
+          <span>Neural Studio</span>
+          <span aria-hidden="true">/</span>
+          <b>{props.subject}</b>
+          <span className="ttl-live">
+            <i /> Live LPU Inference
+          </span>
+        </div>
+        <div className="ttl-tabs-sm" role="tablist" aria-label="Dashboard views">
+          {navItems.map((n) => (
+            <button key={n.id} type="button" role="tab" aria-selected={view === n.id} onClick={() => (n.id === "move" ? startTeaching() : setView(n.id))}>
+              {n.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="ttl-view" key={view}>
+          {view === "overview" ? (
+            <>
+              <div className="ttl-ov-head">
+                <div>
+                  <h3 className="ttl-h3">Neural Retention State</h3>
+                  <div className="ttl-k">Teaching Efficiency Score (TES)</div>
+                  <div className="ttl-total">{formatPercent(eased[0])}</div>
+                  <div className="ttl-delta">
+                    <span>{RANGES[range].delta}</span> vs. Cold Baseline Exam
+                  </div>
+                </div>
+                <div className="ttl-spark">
+                  <div className="ttl-seg" role="tablist" aria-label="Range">
+                    {RANGES.map((r, i) => (
+                      <button key={r.label} type="button" role="tab" aria-selected={range === i} onClick={() => setRange(i)}>
+                        {r.label}
+                      </button>
+                    ))}
+                  </div>
+                  <svg className="ttl-svg ttl-spark-svg" viewBox="0 0 300 84" width="300" height="84" preserveAspectRatio="none" aria-hidden="true">
+                    <defs>
+                      <linearGradient id={gid + "a"} x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0" stopColor="var(--ttl-gold)" stopOpacity="0.28" />
+                        <stop offset="1" stopColor="var(--ttl-gold)" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <path d={path.area} fill={"url(#" + gid + "a)"} />
+                    <path d={path.line} fill="none" stroke="var(--ttl-gold)" strokeWidth="1.6" vectorEffect="non-scaling-stroke" />
+                  </svg>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Screen 1: Voice & Text Socratic Teaching */}
-        <div className="sb-scr" data-on={tab === 1} aria-hidden={tab !== 1}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <h4>Teaching Dialogue</h4>
-            <span className="sb-sub">Step 02 • Socratic Loop</span>
-          </div>
-
-          <div
-            style={{
-              padding: "8px 10px",
-              borderRadius: 12,
-              background: "var(--sb-accent)",
-              color: "#ffffff",
-              display: "grid",
-              gap: 3
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, opacity: 0.9 }}>
-              <Mic size={12} /> Student Voice Explanation
-            </div>
-            <div style={{ fontSize: 11, lineHeight: 1.35 }}>
-              "Think of light as tiny packets of ripples. Higher frequency means tighter, more energetic ripples."
-            </div>
-          </div>
-
-          <div
-            style={{
-              padding: "8px 10px",
-              borderRadius: 12,
-              background: "var(--sb-surface)",
-              display: "grid",
-              gap: 4
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, color: "var(--sb-accent)", fontWeight: 700 }}>
-              <BrainCircuit size={12} /> Child Agent Question
-            </div>
-            <div style={{ fontSize: 11, lineHeight: 1.35 }}>
-              "Wait! If baseballs have ripples too, why don't they spread out when thrown through a window?"
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gap: 4, marginTop: 4 }}>
-            <span className="sb-sub" style={{ fontWeight: 700, textTransform: "uppercase" }}>
-              Active Knowledge Formation:
-            </span>
-            {[
-              "De Broglie Hypothesis",
-              "Wavefunction Superposition",
-              "Planck's Constant Scale Bound",
-              "Macroscopic Coherence Loss"
-            ].map((c) => (
-              <button
-                key={c}
-                onClick={() => toggleConcept(c)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "6px 8px",
-                  borderRadius: 8,
-                  border: "none",
-                  background: checkedConcepts.includes(c) ? "var(--sb-soft)" : "var(--sb-surface)",
-                  color: "var(--sb-ink)",
-                  cursor: "pointer",
-                  fontSize: 10.5,
-                  textAlign: "left"
-                }}
-              >
-                <span>{c}</span>
-                {checkedConcepts.includes(c) ? (
-                  <CheckCircle2 size={13} style={{ color: "var(--sb-accent)" }} />
-                ) : (
-                  <span style={{ fontSize: 9, color: "var(--sb-muted)" }}>Pending</span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Screen 2: 120B Evaluation & TES Metric */}
-        <div className="sb-scr" data-on={tab === 2} aria-hidden={tab !== 2}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <h4>Final Exam & TES</h4>
-            <span className="sb-sub">Step 03 • Objective Proof</span>
-          </div>
-
-          <div
-            style={{
-              padding: "10px 12px",
-              borderRadius: 14,
-              background: "linear-gradient(135deg, #1e293b, #0f172a)",
-              color: "#ffffff",
-              display: "grid",
-              gap: 8
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.05em", color: "#38bdf8" }}>
-                Teaching Effectiveness
-              </span>
-              <span style={{ background: "#22c55e", padding: "2px 6px", borderRadius: 99, fontSize: 9.5, fontWeight: 700 }}>
-                High Transfer
-              </span>
-            </div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-              <span style={{ fontSize: 32, fontWeight: 800, fontFamily: "var(--sb-sans)" }}>89</span>
-              <span style={{ fontSize: 13, opacity: 0.7 }}>/ 100 TES</span>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 10 }}>
-              <div>
-                <span style={{ opacity: 0.7 }}>Cold Baseline:</span>
-                <div style={{ fontWeight: 700, color: "#f87171" }}>15% Score</div>
+              <div className="ttl-accs">
+                {concepts.map((a, i) => (
+                  <button key={a.id} type="button" className="ttl-acc" data-on={focus === a.id || undefined} data-dim={(focus && focus !== a.id) || undefined} onClick={() => startTeaching(a.id)} aria-label={"Teach " + a.name}>
+                    <span className="ttl-acc-top">
+                      <i style={{ background: colors[i % colors.length] }} />
+                      {a.name}
+                      <Icon d={I.arrow} size={13} className="ttl-acc-go" />
+                    </span>
+                    <span className="ttl-acc-bal">{formatPercent(eased[i + 1] ?? a.mastery)}</span>
+                    <span className="ttl-acc-kind">{a.kind}</span>
+                  </button>
+                ))}
               </div>
-              <div>
-                <span style={{ opacity: 0.7 }}>Final Post-Teaching:</span>
-                <div style={{ fontWeight: 700, color: "#4ade80" }}>92% (+77% Δ)</div>
+              <div className="ttl-recent">
+                <div className="ttl-recent-head">
+                  <b>Pedagogical Dialogue Stream</b>
+                  <button type="button" className="ttl-link" onClick={() => setView("activity")}>
+                    View transcript
+                  </button>
+                </div>
+                {activity.slice(0, 3).map((a) => (
+                  <div key={a.id} className="ttl-recent-row">
+                    <span className="ttl-led-date">{a.date}</span>
+                    <span className="ttl-recent-text">{a.text}</span>
+                    <span className="ttl-led-amt" data-in={a.status === "Verified" || undefined}>
+                      {a.status === "Verified" ? "Verified" : a.status === "Consolidated" ? "+Depth" : "Question"}
+                    </span>
+                  </div>
+                ))}
               </div>
+              <div className="ttl-break">
+                <div className="ttl-break-head">
+                  <b>Cognitive Mastery Breakdown</b>
+                  <span>Intuitive Analogy (42%) · Mathematical Rigor (38%) · Boundary Resilience (20%)</span>
+                </div>
+                <div className="ttl-bar" onMouseLeave={() => setTip(-1)}>
+                  {concepts.map((a, i) => (
+                    <span
+                      key={a.id}
+                      tabIndex={0}
+                      onMouseEnter={() => setTip(i)}
+                      onFocus={() => setTip(i)}
+                      onBlur={() => setTip(-1)}
+                      data-dim={(focus && focus !== a.id) || undefined}
+                      style={{ width: widths[i] + "%", background: colors[i % colors.length] }}
+                      aria-label={a.name + " " + shares[i] + "%"}
+                    />
+                  ))}
+                  {tip >= 0 && concepts[tip] ? (
+                    <em className="ttl-tip" style={{ left: clamp(widths.slice(0, tip).reduce((x, y) => x + y, 0) + widths[tip] / 2, 12, 88) + "%" }}>
+                      {concepts[tip].name} · {formatPercent(concepts[tip].mastery)} Mastery
+                    </em>
+                  ) : null}
+                </div>
+                <div className="ttl-legend">
+                  {concepts.map((a, i) => (
+                    <span key={a.id}>
+                      <i style={{ background: colors[i % colors.length] }} />
+                      {shares[i]}% {a.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : view === "move" ? (
+            <div className="ttl-move">
+              <h3 className="ttl-h3">Teach Child Agent (Active Feynman Transfer)</h3>
+              {step === "edit" || step === "error" ? (
+                <form className="ttl-form" onSubmit={review} noValidate>
+                  <div className="ttl-pick">
+                    <div className="ttl-pick-col">
+                      <div className="ttl-k">Concept Source</div>
+                      {concepts.map((a) => (
+                        <button key={a.id} type="button" className="ttl-pill" aria-pressed={from === a.id} onClick={() => setFrom(a.id)}>
+                          {a.name}
+                          <small>{formatPercent(a.mastery)}</small>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="ttl-swap-icon">
+                      <Icon d={I.arrow} size={16} />
+                    </div>
+                    <div className="ttl-pick-col">
+                      <div className="ttl-k">Child Agent Target</div>
+                      <div className="ttl-pill" aria-pressed="true">
+                        Isolated 20B Neural Memory
+                        <small>Air-Gapped</small>
+                      </div>
+                    </div>
+                  </div>
+                  <label className="ttl-field">
+                    <span className="ttl-k">Your Explanation (No Jargon Allowed)</span>
+                    <textarea
+                      rows={3}
+                      className="ttl-explain-area"
+                      placeholder="Explain this concept in simple, intuitive terms as if teaching a beginner..."
+                      value={explanation}
+                      onChange={(e) => setExplanation(e.target.value)}
+                    />
+                  </label>
+                  <div className="ttl-chips">
+                    {quickChips.map((c) => (
+                      <button key={c.label} type="button" onClick={() => setExplanation(c.text)}>
+                        {c.label}
+                      </button>
+                    ))}
+                  </div>
+                  <input className="ttl-memo" placeholder="Clarification tag (e.g. Phase cancellation analog)" value={memo} maxLength={60} onChange={(e) => setMemo(e.target.value)} />
+                  {err || step === "error" ? (
+                    <p className="ttl-err" role="alert">
+                      {err || "Transmission dropped. Check your explanation length."}
+                    </p>
+                  ) : null}
+                  <button type="submit" className="ttl-btn ttl-btn-dark">
+                    Transmit Explanation <Icon d={I.arrow} size={15} />
+                  </button>
+                </form>
+              ) : (
+                <div className="ttl-review" aria-live="polite">
+                  <div className="ttl-route">
+                    <span>{fromConcept.name}</span>
+                    <svg className="ttl-svg ttl-route-line" width="80" height="12" viewBox="0 0 80 12" aria-hidden="true">
+                      <path d="M2 6h74M70 1l6 5-6 5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                    </svg>
+                    <span>Child Agent Neural Synapse</span>
+                  </div>
+                  <div className="ttl-review-amt">Transmitting Concept...</div>
+                  <dl className="ttl-dl">
+                    <div>
+                      <dt>Cognitive Model</dt>
+                      <dd>Isolated 20B Blank-Slate Learner</dd>
+                    </div>
+                    <div>
+                      <dt>Predicted TES Delta</dt>
+                      <dd>+18.4% Retention Boost</dd>
+                    </div>
+                    <div>
+                      <dt>Teacher Verification</dt>
+                      <dd>Flagship 120B Blind Evaluation</dd>
+                    </div>
+                  </dl>
+                  {step === "done" ? (
+                    <div className="ttl-done">
+                      <span className="ttl-done-ic">
+                        <Icon d={I.check} size={16} stroke={2.2} />
+                      </span>
+                      Knowledge Consolidated into Child Agent Memory!
+                      <button type="button" className="ttl-link" onClick={reset}>
+                        Teach another concept
+                      </button>
+                      <button type="button" className="ttl-link" onClick={() => setView("overview")}>
+                        View neural retention state
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="ttl-row">
+                      <button type="button" className="ttl-btn ttl-btn-ghost" onClick={() => setStep("edit")} disabled={step === "sending"}>
+                        Edit Explanation
+                      </button>
+                      <button type="button" className="ttl-btn ttl-btn-dark" onClick={confirm} disabled={step === "sending"} data-busy={step === "sending" || undefined}>
+                        {step === "sending" ? "Processing on Groq LPU…" : "Confirm Neural Ingestion"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          </div>
-
-          <div style={{ display: "grid", gap: 5, marginTop: 4 }}>
-            <span className="sb-sub" style={{ fontWeight: 700, textTransform: "uppercase" }}>
-              Verified Concept Breakdown:
-            </span>
-            {[
-              { name: "Matter Waves", score: "96%", grade: "Mastered" },
-              { name: "Diffraction Limits", score: "90%", grade: "Mastered" },
-              { name: "Uncertainty Principle", score: "84%", grade: "Solid" }
-            ].map((item, i) => (
-              <div
-                key={i}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "6px 8px",
-                  borderRadius: 10,
-                  background: "var(--sb-surface)",
-                  fontSize: 10.5
-                }}
-              >
-                <b>{item.name}</b>
-                <span style={{ color: "var(--sb-accent)", fontWeight: 700 }}>
-                  {item.score} ({item.grade})
-                </span>
+          ) : (
+            <div className="ttl-act">
+              <div className="ttl-act-head">
+                <h3 className="ttl-h3">Pedagogical Dialogue & Inquiries</h3>
+                <div className="ttl-seg" role="tablist" aria-label="Filter">
+                  {(["all", "in", "out"] as const).map((f) => (
+                    <button key={f} type="button" role="tab" aria-selected={filter === f} onClick={() => setFilter(f)}>
+                      {f === "all" ? "All" : f === "in" ? "Child Inquiries" : "Teacher Verified"}
+                    </button>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Tabbar */}
-        <div
-          style={{
-            position: "absolute",
-            left: 14,
-            right: 14,
-            bottom: 14,
-            height: 44,
-            borderRadius: 99,
-            background: "var(--sb-surface)",
-            boxShadow: "inset 0 0 0 1px var(--sb-line)",
-            display: "flex",
-            justifyContent: "space-around",
-            alignItems: "center",
-            color: "var(--sb-muted)"
-          }}
-        >
-          <span style={{ color: tab === 0 ? "var(--sb-accent)" : "inherit" }}>
-            <Clock size={16} />
-          </span>
-          <span style={{ color: tab === 1 ? "var(--sb-accent)" : "inherit" }}>
-            <Mic size={16} />
-          </span>
-          <span style={{ color: tab === 2 ? "var(--sb-accent)" : "inherit" }}>
-            <TrendingUp size={16} />
-          </span>
+              <ul className="ttl-ledger">
+                {list.map((a) => (
+                  <li key={a.id}>
+                    <span className="ttl-led-date">{a.date}</span>
+                    <span className="ttl-led-text">
+                      {a.text}
+                      <small>{a.concept}</small>
+                    </span>
+                    <span className="ttl-led-status" data-s={a.status}>
+                      {a.status}
+                    </span>
+                    <span className="ttl-led-amt" data-in={a.status === "Verified" || undefined}>
+                      {a.score}% TES
+                    </span>
+                  </li>
+                ))}
+                {!list.length ? <li className="ttl-led-empty">Nothing in this filter yet.</li> : null}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
     </div>
   )
 }
 
-// ---------------- Showcase / Coverflow ----------------
-
-function SubjectsShowcase({
-  subjects,
-  saved,
-  onSave
-}: {
-  subjects: SubjectCard[]
-  saved: string[]
-  onSave: (s: SubjectCard) => void
-}) {
-  const n = subjects.length
-  const [idx, setIdx] = React.useState(0)
-  const [paused, setPaused] = React.useState(false)
-  const flowRef = React.useRef<HTMLDivElement | null>(null)
-  const cardsRef = React.useRef<(HTMLDivElement | null)[]>([])
-  const st = React.useRef({
-    pos: 0,
-    unit: 210,
-    tween: null as gsap.core.Tween | null
-  })
-
-  const layout = React.useCallback(() => {
-    const s = st.current
-    cardsRef.current.forEach((el, i) => {
-      if (!el) return
-      let d = i - s.pos
-      while (d > n / 2) d -= n
-      while (d < -n / 2) d += n
-      const x = d * s.unit
-      const scale = Math.max(0.68, 1 - Math.abs(d) * 0.18)
-      const opacity = Math.max(0.2, 1 - Math.abs(d) * 0.32)
-      const zIndex = 100 - Math.round(Math.abs(d) * 10)
-      gsap.set(el, { x, scale, opacity, zIndex })
-      el.style.setProperty("--sb-fade", String(Math.min(0.6, Math.max(0, Math.abs(d) - 0.8) * 0.3)))
-      el.dataset.center = String(Math.abs(d) < 0.5)
-    })
-  }, [n])
-
-  const goTo = React.useCallback(
-    (target: number) => {
-      const s = st.current
-      if (s.tween) s.tween.kill()
-      const normalized = ((Math.round(target) % n) + n) % n
-      setIdx(normalized)
-      s.tween = gsap.to(s, {
-        pos: target,
-        duration: 0.8,
-        ease: "power2.out",
-        onUpdate: layout
-      })
-    },
-    [layout, n]
+function FlowCard({ title, score, note, from, to, flash }: { title: string; score: string; note?: string; from: string; to: string; flash?: number }) {
+  return (
+    <div className="ttl-flow" key={flash}>
+      <div className="ttl-flow-top">
+        <span>{title}</span>
+        <b>{score}</b>
+        {note ? <em>{note}</em> : null}
+      </div>
+      <div className="ttl-flow-row">
+        <span className="ttl-flow-chip">
+          <i />
+          {from}
+        </span>
+        <svg className="ttl-svg ttl-flow-arrow" width="44" height="10" viewBox="0 0 44 10" aria-hidden="true">
+          <path d="M1 5h38" />
+          <path d="M35 1l4 4-4 4" />
+        </svg>
+        <span className="ttl-flow-chip ttl-flow-chip-b">
+          <i />
+          {to}
+        </span>
+      </div>
+    </div>
   )
+}
+
+const SETUP_ITEMS = [
+  "Teacher Agent parses course ontology",
+  "Extracting 8 core conceptual axioms",
+  "Formulating cold baseline exam questions",
+  "Air-gapping Child Agent neural buffer"
+]
+
+function SceneSetup({ active, reduced }: { active: boolean; reduced: boolean }) {
+  const [done, setDone] = React.useState(reduced ? SETUP_ITEMS.length : 0)
+  const [run, setRun] = React.useState(0)
+  const [off, setOff] = React.useState([] as number[])
 
   React.useEffect(() => {
-    layout()
-  }, [layout])
+    if (!active) return
+    if (reduced) {
+      setDone(SETUP_ITEMS.length)
+      return
+    }
+    setDone(0)
+    setOff([])
+    const ts = SETUP_ITEMS.map((_, i) => setTimeout(() => setDone(i + 1), 520 + i * 560))
+    return () => ts.forEach(clearTimeout)
+  }, [active, run, reduced])
 
-  // Autoplay timer
-  React.useEffect(() => {
-    if (paused) return
-    const timer = setInterval(() => {
-      goTo(st.current.pos + 1)
-    }, 4500)
-    return () => clearInterval(timer)
-  }, [paused, goTo])
-
-  const activeSubject = subjects[idx] || subjects[0]
+  const ready = SETUP_ITEMS.filter((_, i) => i < done && !off.includes(i)).length
 
   return (
-    <div>
-      <div
-        ref={flowRef}
-        className="sb-flow"
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-        role="region"
-        aria-label="Course coverflow"
-      >
-        {subjects.map((item, i) => {
-          const isSaved = saved.includes(item.id)
-          return (
-            <div
-              key={item.id}
-              ref={(el) => {
-                cardsRef.current[i] = el
-              }}
-              className="sb-card"
-              onClick={() => goTo(st.current.pos + (i - (idx % n)))}
-            >
-              <Pic shot={item.image} w={560} h={640} />
-              <button
-                className="sb-heart"
-                aria-pressed={isSaved}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onSave(item)
-                }}
-                title={isSaved ? "Remove from study plan" : "Save to my study plan"}
-              >
-                <Heart size={16} fill={isSaved ? "currentColor" : "none"} />
-              </button>
-            </div>
-          )
-        })}
+    <div className="ttl-scene ttl-scene-setup">
+      <div className="ttl-setup-card">
+        <div className="ttl-setup-head">
+          <span>
+            <b>Course Setup & Decomposition</b>
+            <small>Advanced Quantum Mechanics • PHYS 401</small>
+          </span>
+          <button type="button" className="ttl-btn ttl-btn-dark ttl-btn-sm" onClick={() => setRun((r) => r + 1)}>
+            Re-parse <Icon d={I.plus} size={14} />
+          </button>
+        </div>
+        <ul className="ttl-setup-list">
+          {SETUP_ITEMS.map((t, i) => {
+            const on = i < done && !off.includes(i)
+            return (
+              <li key={t}>
+                <button type="button" data-on={on || undefined} data-last={i === SETUP_ITEMS.length - 1 || undefined} onClick={() => (i < done ? setOff((o) => (o.includes(i) ? o.filter((x) => x !== i) : [...o, i])) : setDone(i + 1))}>
+                  <span className="ttl-setup-ic">{i === 0 ? <Icon d={I.doc} size={15} /> : i === 1 ? <Icon d={I.brain} size={15} /> : i === 2 ? <Icon d={I.sparkles} size={15} /> : <Icon d={I.shield} size={15} />}</span>
+                  {t}
+                  <span className="ttl-tick">
+                    <Icon d={I.check} size={13} stroke={2.4} />
+                  </span>
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+        <div className="ttl-setup-foot">
+          <span>
+            {ready} of {SETUP_ITEMS.length} ready
+          </span>
+          <span className="ttl-meter">
+            <i style={{ width: (ready / SETUP_ITEMS.length) * 100 + "%" }} />
+          </span>
+          <span>{ready === SETUP_ITEMS.length ? "3.2s on Groq" : "Parsing…"}</span>
+        </div>
+        <svg className="ttl-svg ttl-cursor" data-at={done >= SETUP_ITEMS.length - 1 ? "last" : undefined} data-click={done >= SETUP_ITEMS.length || undefined} width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 3l14 7.5-6.2 1.6L10 18.5z" fill="var(--ttl-ink)" stroke="var(--ttl-paper)" strokeWidth="1.4" strokeLinejoin="round" />
+        </svg>
       </div>
+    </div>
+  )
+}
 
-      <div className="sb-caption">
-        <h3>{activeSubject.name}</h3>
-        <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-          <span className="sb-chip">
-            <Compass size={12} /> {activeSubject.domain}
-          </span>
-          <span className="sb-chip">
-            <Layers size={12} /> {activeSubject.conceptsCount} Core Concepts
-          </span>
-          <span className="sb-chip">
-            <Clock size={12} /> ~{activeSubject.time} min drill
-          </span>
+function ScenePhone({ active }: { active: boolean }) {
+  const [sheet, setSheet] = React.useState(false)
+  const [amt, setAmt] = React.useState(3)
+  const [state, setState] = React.useState("idle" as "idle" | "sending" | "sent")
+
+  React.useEffect(() => {
+    if (!active) setSheet(false)
+  }, [active])
+
+  const send = () => {
+    setState("sending")
+    setTimeout(() => setState("sent"), 900)
+  }
+
+  const complexityLevels = ["Intuitive Analogy (ELIF5)", "First-Principles Conceptual", "Mathematical Formalism", "Doctoral Edge Cases"]
+
+  return (
+    <div className="ttl-scene ttl-scene-phone">
+      <span className="ttl-bokeh" aria-hidden="true" />
+      <div className="ttl-chipfloat ttl-chipfloat-a" aria-hidden="true">
+        <Icon d={I.check} size={12} stroke={2.4} /> Voice Transcribed · Groq Whisper
+      </div>
+      <div className="ttl-chipfloat ttl-chipfloat-b" aria-hidden="true">
+        Neural Insight Consolidated ✓
+      </div>
+      <div className="ttl-phone">
+        <div className="ttl-phone-screen">
+          <div className="ttl-phone-status">
+            <span>Child AI Dialogue</span>
+            <i />
+          </div>
+          <div className="ttl-phone-k">Cognitive Ingestion Level</div>
+          <div className="ttl-phone-bal">Level {amt}</div>
+          <svg className="ttl-svg ttl-phone-chart" viewBox="0 0 180 48" width="180" height="48" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M0 40 C20 36 28 30 44 31 S70 18 88 22 118 8 136 12 164 4 180 6" fill="none" stroke="var(--ttl-gold)" strokeWidth="1.8" />
+          </svg>
+          <div className="ttl-phone-card">
+            <span>Child Agent Query</span>
+            <b>"Wait, if light is a wave, how does it knock electrons off metal in photoelectric effect?"</b>
+          </div>
+          <button type="button" className="ttl-phone-btn" onClick={() => setSheet(true)}>
+            {state === "sent" ? "Explanation Transmitted ✓" : "Speak / Transmit Explanation"}
+          </button>
+          <div className="ttl-phone-sheet" data-open={sheet || undefined}>
+            <div className="ttl-phone-grip" />
+            {state === "sent" ? (
+              <div className="ttl-phone-sent">
+                <span className="ttl-done-ic">
+                  <Icon d={I.check} size={16} stroke={2.4} />
+                </span>
+                <b>Explanation Consolidated</b>
+                <small>Child Agent memory buffer reinforced</small>
+                <button type="button" onClick={() => setSheet(false)}>
+                  Continue Dialogue
+                </button>
+              </div>
+            ) : (
+              <>
+                <b>Select Explanation Rigor</b>
+                <div className="ttl-phone-amt">{complexityLevels[amt - 1] || "Intuitive"}</div>
+                <input type="range" min={1} max={4} value={amt} onChange={(e) => setAmt(+e.target.value)} aria-label="Complexity tier" className="ttl-range" style={{ "--ttl-fill": ((amt - 1) / 3) * 100 + "%" } as React.CSSProperties} tabIndex={sheet ? 0 : -1} />
+                <button type="button" onClick={send} disabled={state === "sending"} tabIndex={sheet ? 0 : -1}>
+                  {state === "sending" ? "Transmitting to Child Buffer…" : "Confirm Verbal Explanation"}
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
+    </div>
+  )
+}
 
-      <div className="sb-pager" data-paused={paused}>
-        <button className="sb-round" onClick={() => goTo(st.current.pos - 1)} aria-label="Previous subject">
-          ←
-        </button>
-        <div className="sb-pager-dots">
-          {subjects.map((_, i) => (
-            <span key={i} className="sb-pd" aria-current={i === idx}>
-              <i />
+const TAXONOMY_PARTS = [
+  { name: "Intuitive Analogies", share: 0.42 },
+  { name: "First Principles", share: 0.38 },
+  { name: "Boundary Resilience", share: 0.20 },
+]
+
+function SceneReport({ active, colors, reduced }: { active: boolean; colors: string[]; reduced: boolean }) {
+  const parts = TAXONOMY_PARTS
+  const target = parts.map((p) => (active ? p.share * 100 : 0))
+  const w = useTween(target, reduced, 1000)
+  const t = useTween([active ? 89.6 : 0], reduced, 1400)
+  const pct = [42, 38, 20]
+
+  return (
+    <div className="ttl-scene ttl-scene-report">
+      <div className="ttl-rep-card ttl-rep-back" aria-hidden="true" />
+      <div className="ttl-rep-card">
+        <div className="ttl-rep-head">
+          <b>Session Analytics</b>
+          <div className="ttl-seg">
+            <button type="button" aria-selected="true">
+              Verified TES
+            </button>
+          </div>
+        </div>
+        <div className="ttl-k">Calculated Teaching Efficiency Score</div>
+        <div className="ttl-rep-total">{formatPercent(t[0])}</div>
+        <div className="ttl-rep-row">
+          <div>
+            <span>Cold Baseline</span>
+            <b>14.0%</b>
+          </div>
+          <div>
+            <span>Final Blind Exam</span>
+            <b>92.5%</b>
+          </div>
+          <div>
+            <span>Net Delta (ΔTES)</span>
+            <b style={{ color: "var(--ttl-good)" }}>+78.5%</b>
+          </div>
+        </div>
+        <div className="ttl-break-head">
+          <b>Bloom's Cognitive Spectrum Breakdown</b>
+          <span>Empirically verified across 8 conceptual modules</span>
+        </div>
+        <div className="ttl-bar ttl-bar-lg">
+          {parts.map((p, i) => (
+            <span key={p.name} style={{ width: w[i] + "%", background: colors[i % colors.length] }} />
+          ))}
+        </div>
+        <div className="ttl-legend">
+          {parts.map((p, i) => (
+            <span key={p.name}>
+              <i style={{ background: colors[i % colors.length] }} />
+              {pct[i]}% {p.name}
             </span>
           ))}
         </div>
-        <button className="sb-round" onClick={() => goTo(st.current.pos + 1)} aria-label="Next subject">
-          →
-        </button>
       </div>
     </div>
   )
 }
 
-// ---------------- Interactive Drill Phone (Feynman Drill) ----------------
+function Scene({ i, active, reduced, colors }: { i: number; active: boolean; reduced: boolean; colors: string[] }) {
+  const k = i % 3
+  if (k === 0) return <SceneSetup active={active} reduced={reduced} />
+  if (k === 1) return <ScenePhone active={active} />
+  return <SceneReport active={active} colors={colors} reduced={reduced} />
+}
 
-function InteractiveDrillPhone({ exercise }: { exercise: DrillExercise }) {
-  const [step, setStep] = React.useState(0)
-  const [left, setLeft] = React.useState(-1)
-  const [running, setRunning] = React.useState(false)
-  const currentStep = exercise.steps[step]
-  const totalSeconds = currentStep && currentStep.minutes ? currentStep.minutes * 60 : 0
+const DOTS = 500
 
-  React.useEffect(() => {
-    setRunning(false)
-    setLeft(-1)
-  }, [step])
+function Coverage({ title, items, reduced }: { title: string; items: TtlCoverageItem[]; reduced: boolean }) {
+  const min = 10
+  const max = 500
+  const [conceptsCount, setConceptsCount] = React.useState(85)
+  const ref = React.useRef(null as HTMLDivElement | null)
+  const seen = useSeen(ref)
 
-  React.useEffect(() => {
-    if (!running) return
-    const t = setInterval(() => {
-      setLeft((l) => {
-        if (l <= 1) {
-          setRunning(false)
-          return 0
-        }
-        return l - 1
-      })
-    }, 1000)
-    return () => clearInterval(t)
-  }, [running])
-
-  const shownSeconds = left < 0 ? totalSeconds : left
-  const formatTime = (sec: number) => {
-    const m = Math.floor(sec / 60)
-    const s = sec % 60
-    return `${m}:${s < 10 ? "0" : ""}${s}`
-  }
+  const lit = Math.round((conceptsCount / max) * DOTS)
+  const pos = (conceptsCount - min) / (max - min)
+  const shown = useTween([seen ? conceptsCount : 0, seen ? Math.round(conceptsCount * 0.94) : 0, seen ? Math.round(180 + conceptsCount * 0.4) : 0], reduced, 700)
 
   return (
-    <div className="sb-phone">
-      <div className="sb-screen">
-        <PhoneStatusBar />
-        <div className="sb-scr" data-on="true" style={{ bottom: 0 }}>
-          <div className="sb-sub" style={{ textAlign: "center", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-            Active Feynman Drill
-          </div>
-          <h4 style={{ fontSize: 13.5, lineHeight: 1.3 }}>{exercise.name}</h4>
-
-          <div className="sb-bar">
-            <i style={{ transform: `scaleX(${(step + 1) / exercise.steps.length})` }} />
-          </div>
-
-          <div style={{ display: "grid", gap: 5, maxHeight: 240, overflowY: "auto", scrollbarWidth: "none" }}>
-            {exercise.steps.map((st, i) => (
-              <button
-                key={i}
-                onClick={() => setStep(i)}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "20px 1fr",
-                  gap: 8,
-                  alignItems: "start",
-                  padding: "7px 8px",
-                  borderRadius: 12,
-                  textAlign: "left",
-                  border: "none",
-                  cursor: "pointer",
-                  background: i === step ? "var(--sb-surface)" : "transparent",
-                  color: "inherit",
-                  opacity: i < step ? 0.5 : 1
-                }}
-              >
-                <i
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: "50%",
-                    display: "grid",
-                    placeItems: "center",
-                    fontStyle: "normal",
-                    fontSize: 10,
-                    fontWeight: 700,
-                    background: i <= step ? "var(--sb-accent)" : "transparent",
-                    color: i <= step ? "#ffffff" : "inherit",
-                    boxShadow: i <= step ? "none" : "inset 0 0 0 1px var(--sb-line)"
-                  }}
-                >
-                  {i < step ? "✓" : i + 1}
-                </i>
-                <span>
-                  <b style={{ fontSize: 11.5 }}>{st.title}</b>
-                  <p style={{ margin: "2px 0 0", fontSize: 10, color: "var(--sb-muted)", lineHeight: 1.35 }}>
-                    {st.text}
-                  </p>
-                </span>
-              </button>
-            ))}
-          </div>
-
-          {totalSeconds > 0 ? (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "8px 12px",
-                borderRadius: 14,
-                background: "var(--sb-accent)",
-                color: "#ffffff"
-              }}
-            >
+    <section className="ttl-sec ttl-cov" data-sec="coverage">
+      <div className="ttl-wrap">
+        <h2 className="ttl-h2 ttl-cov-title" data-ttl-rise>
+          <Marked text={title} />
+        </h2>
+        <div className="ttl-cov-items">
+          {items.map((it, i) => (
+            <div key={it.title} className="ttl-cov-item" data-ttl-rise>
+              <span className="ttl-cov-ic">
+                <Icon d={[I.shield, I.doc, I.brain, I.sparkles][i % 4]} size={20} stroke={1.4} />
+              </span>
+              <b>{it.title}</b>
+              <small>{it.text}</small>
+            </div>
+          ))}
+        </div>
+        <div className="ttl-cov-calc" ref={ref} data-ttl-rise>
+          <div className="ttl-cov-ctl">
+            <div className="ttl-k">Syllabus Scale (Concept Nodes)</div>
+            <div className="ttl-cov-dep">{Math.round(shown[0])} Concepts</div>
+            <input
+              type="range"
+              className="ttl-range ttl-range-lg"
+              min={min}
+              max={max}
+              value={conceptsCount}
+              onChange={(e) => setConceptsCount(+e.target.value)}
+              aria-label="Concepts scale"
+              style={{ "--ttl-fill": pos * 100 + "%" } as React.CSSProperties}
+            />
+            <div className="ttl-cov-scale">
+              <span>{min} Concepts (Single Lecture)</span>
+              <span>{max} Concepts (Complete Textbook)</span>
+            </div>
+            <dl className="ttl-cov-out">
               <div>
-                <small style={{ fontSize: 9.5, opacity: 0.85, display: "block" }}>
-                  {left === 0 ? "Drill Completed!" : "Timer Limit"}
-                </small>
-                <b style={{ fontSize: 18, fontVariantNumeric: "tabular-nums" }}>{formatTime(shownSeconds)}</b>
+                <dt>Grounded Synapses</dt>
+                <dd>{Math.round(shown[0]) * 12}</dd>
               </div>
-              <button
-                onClick={() => {
-                  if (left === 0) {
-                    setLeft(-1)
-                    setRunning(false)
-                  } else {
-                    if (left < 0) setLeft(totalSeconds)
-                    setRunning((r) => !r)
-                  }
-                }}
-                style={{
-                  padding: "6px 14px",
-                  borderRadius: 99,
-                  border: "none",
-                  background: "rgba(255, 255, 255, 0.25)",
-                  color: "#ffffff",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  cursor: "pointer"
-                }}
-              >
-                {left === 0 ? "Reset" : running ? "Pause" : left > 0 ? "Resume" : "Start"}
-              </button>
+              <div>
+                <dt>Mastery Verified</dt>
+                <dd>{Math.round(shown[1])}</dd>
+              </div>
+              <div data-over="true">
+                <dt>Retention Half-Life</dt>
+                <dd>{Math.round(shown[2])} Days</dd>
+              </div>
+            </dl>
+            <p className="ttl-fine">
+              Every concept node undergoes dual-agent Socratic interrogation. Unlike passive flashcards, knowledge is permanently consolidated into semantic memory structures.
+            </p>
+          </div>
+          <div className="ttl-dots-wrap">
+            <div className="ttl-dots" role="img" aria-label={lit + " of " + DOTS + " neural synapses illuminated"}>
+              {Array.from({ length: DOTS }, (_, i) => (
+                <i key={i} data-on={i < lit || undefined} style={{ transitionDelay: reduced ? "0ms" : Math.min(i, 400) * 1.4 + "ms" }} />
+              ))}
             </div>
-          ) : (
-            <div
-              style={{
-                padding: "8px 12px",
-                borderRadius: 12,
-                background: "var(--sb-surface)",
-                fontSize: 11,
-                textAlign: "center"
-              }}
-            >
-              Final verification by 120B reasoning model
-            </div>
-          )}
-
-          <div style={{ display: "flex", gap: 6 }}>
-            <button
-              onClick={() => setStep((x) => Math.max(0, x - 1))}
-              disabled={step === 0}
-              style={{
-                flex: 1,
-                height: 34,
-                borderRadius: 99,
-                fontSize: 11.5,
-                fontWeight: 600,
-                border: "none",
-                background: "var(--sb-surface)",
-                color: "inherit",
-                cursor: step === 0 ? "default" : "pointer",
-                opacity: step === 0 ? 0.4 : 1
-              }}
-            >
-              Back
-            </button>
-            <button
-              onClick={() => setStep((x) => (x + 1) % exercise.steps.length)}
-              style={{
-                flex: 1,
-                height: 34,
-                borderRadius: 99,
-                fontSize: 11.5,
-                fontWeight: 600,
-                border: "none",
-                background: "var(--sb-accent)",
-                color: "#ffffff",
-                cursor: "pointer"
-              }}
-            >
-              {step === exercise.steps.length - 1 ? "Start Over" : "Next Step"}
-            </button>
+            <p className="ttl-fine">
+              Each dot represents one verified neural synapse. The 500-synapse active recall matrix guarantees zero conceptual blind spots.
+            </p>
           </div>
         </div>
       </div>
+    </section>
+  )
+}
+
+function PricingComparison({ reduced }: { reduced: boolean }) {
+  const [studyWeeks, setStudyWeeks] = React.useState(6)
+  const passiveHours = studyWeeks * 14
+  const feynmanHours = studyWeeks * 4
+  const bars = useTween([passiveHours, feynmanHours], reduced, 600)
+  const top = Math.max(passiveHours, feynmanHours, 1)
+
+  return (
+    <section className="ttl-sec ttl-price" data-sec="pricing">
+      <span className="ttl-price-glow" aria-hidden="true" />
+      <div className="ttl-wrap ttl-split">
+        <div className="ttl-label">Cognitive Architecture</div>
+        <div>
+          <h2 className="ttl-price-big" data-ttl-rise>
+            <span>Zero</span> cognitive drift.
+          </h2>
+          <p className="ttl-price-intro" data-ttl-rise>
+            Why conventional cramming fails in technical courses compared to active Feynman synthesis:
+          </p>
+          <ul className="ttl-price-list">
+            <li data-ttl-rise>
+              <svg className="ttl-svg ttl-price-check" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                <path d={I.check} />
+              </svg>
+              Dual-Agent Isolation: Zero document leakage between Teacher (120B) and Child (20B)
+            </li>
+            <li data-ttl-rise>
+              <svg className="ttl-svg ttl-price-check" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                <path d={I.check} />
+              </svg>
+              Sub-second cloud reasoning powered by Groq LPU acceleration
+            </li>
+            <li data-ttl-rise>
+              <svg className="ttl-svg ttl-price-check" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                <path d={I.check} />
+              </svg>
+              Persistent session history & neural mastery analytics stored on Supabase PostgreSQL
+            </li>
+          </ul>
+
+          <div className="ttl-compare" data-ttl-rise>
+            <div className="ttl-compare-head">
+              <span>Exam Prep Duration (Weeks)</span>
+              <div className="ttl-step">
+                <button type="button" onClick={() => setStudyWeeks((v) => Math.max(1, v - 1))} aria-label="Fewer weeks">
+                  −
+                </button>
+                <output aria-live="polite">{studyWeeks}</output>
+                <button type="button" onClick={() => setStudyWeeks((v) => Math.min(16, v + 1))} aria-label="More weeks">
+                  +
+                </button>
+              </div>
+            </div>
+            <div className="ttl-cbar">
+              <span>Passive Cramming</span>
+              <i style={{ width: (bars[0] / top) * 100 + "%" }} />
+              <b>{Math.round(bars[0])} hrs · 78% forgotten</b>
+            </div>
+            <div className="ttl-cbar ttl-cbar-us">
+              <span>Neural Feynman</span>
+              <i style={{ width: (bars[1] / top) * 100 + "%" }} />
+              <b>{Math.round(bars[1])} hrs · 94% retained</b>
+            </div>
+            <p className="ttl-fine">
+              Data derived from Ebbinghaus spaced retention studies: Teaching a naive agent compresses study time by 3.5× while doubling 180-day conceptual retention.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function Faq({ f }: { f: { label?: string; title?: string; items?: TtlFaq[]; contact?: string } }) {
+  const [open, setOpen] = React.useState(-1)
+  const items = f.items ?? DEFAULT_FAQ
+  const contact = f.contact ?? "research@studybuddy.ai"
+
+  return (
+    <section className="ttl-sec ttl-faq" data-sec="faq">
+      <div className="ttl-wrap ttl-split">
+        <div className="ttl-label">{f.label ?? "FAQ"}</div>
+        <div>
+          <h2 className="ttl-h2 ttl-faq-title" data-ttl-rise>
+            <Marked text={f.title ?? "Frequently Asked\nQuestions"} />
+          </h2>
+          <ul className="ttl-faq-list">
+            {items.map((it, i) => (
+              <li key={it.q} data-ttl-rise>
+                <button type="button" aria-expanded={open === i} onClick={() => setOpen((o) => (o === i ? -1 : i))}>
+                  <span>{it.q}</span>
+                  <span className="ttl-plus" data-open={open === i || undefined}>
+                    <Icon d={I.plus} size={16} />
+                  </span>
+                </button>
+                <div className="ttl-collapse" data-open={open === i || undefined}>
+                  <div>
+                    <p>{it.a}</p>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+          {contact ? (
+            <p className="ttl-fine ttl-faq-more">
+              Have deeper pedagogical inquiries? Contact our team at <a href={"mailto:" + contact}>{contact}</a>
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function Cta({
+  brand,
+  openSignal,
+  reduced,
+  onStart,
+}: {
+  brand: string
+  openSignal: number
+  reduced: boolean
+  onStart: () => void
+}) {
+  const [open, setOpen] = React.useState(false)
+  const [email, setEmail] = React.useState("")
+  const [state, setState] = React.useState("idle" as "idle" | "sending" | "done" | "invalid")
+  const inputRef = React.useRef(null as HTMLInputElement | null)
+  const cardRef = React.useRef(null as HTMLDivElement | null)
+
+  React.useEffect(() => {
+    if (!openSignal) return
+    setOpen(true)
+    const t = setTimeout(() => inputRef.current?.focus({ preventScroll: true }), reduced ? 0 : 650)
+    return () => clearTimeout(t)
+  }, [openSignal, reduced])
+
+  React.useEffect(() => {
+    const card = cardRef.current
+    if (!card || reduced) return
+    const blobs = Array.from(card.querySelectorAll(".ttl-blob")) as HTMLElement[]
+    const movers = blobs.map((b, i) => ({
+      x: gsap.quickTo(b, "x", { duration: 1.4 + i * 0.5, ease: "power3.out" }),
+      y: gsap.quickTo(b, "y", { duration: 1.4 + i * 0.5, ease: "power3.out" }),
+    }))
+    const move = (e: PointerEvent) => {
+      const r = card.getBoundingClientRect()
+      const dx = e.clientX - r.left - r.width / 2
+      const dy = e.clientY - r.top - r.height / 2
+      movers.forEach((m, i) => {
+        const k = [0.35, -0.25, 0.18][i] ?? 0.2
+        m.x(dx * k)
+        m.y(dy * k)
+      })
+    }
+    card.addEventListener("pointermove", move)
+    return () => {
+      card.removeEventListener("pointermove", move)
+      blobs.forEach((b) => gsap.killTweensOf(b))
+    }
+  }, [reduced])
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!open) {
+      setOpen(true)
+      setTimeout(() => inputRef.current?.focus(), reduced ? 0 : 420)
+      return
+    }
+    if (!isEmail(email)) {
+      setState("invalid")
+      inputRef.current?.focus()
+      return
+    }
+    setState("sending")
+    setTimeout(() => {
+      setState("done")
+      onStart()
+    }, 700)
+  }
+
+  return (
+    <section className="ttl-sec ttl-cta-sec" data-sec="get-started">
+      <div className="ttl-wrap">
+        <div className="ttl-cta" ref={cardRef}>
+          <span className="ttl-blob ttl-blob-a" aria-hidden="true" />
+          <span className="ttl-blob ttl-blob-b" aria-hidden="true" />
+          <span className="ttl-blob ttl-blob-c" aria-hidden="true" />
+          <span className="ttl-grain" aria-hidden="true" />
+          <div className="ttl-cta-in">
+            <h2 className="ttl-h2">
+              <Marked text={"Ready to experience\n*" + brand + " Neural*?"} />
+            </h2>
+            <p>
+              Launch your first Feynman learning session in sixty seconds. Upload course notes, teach your isolated Child AI, and prove your true understanding.
+            </p>
+            {state === "done" ? (
+              <div className="ttl-cta-done" role="status">
+                <span className="ttl-done-ic">
+                  <Icon d={I.check} size={16} stroke={2.4} />
+                </span>
+                Launching workspace for {email.trim()}…
+              </div>
+            ) : (
+              <form className="ttl-cta-row" onSubmit={submit} noValidate>
+                <div className="ttl-morph" data-open={open || undefined} data-bad={state === "invalid" || undefined}>
+                  <input
+                    ref={inputRef}
+                    type="email"
+                    placeholder="student@university.edu"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value)
+                      if (state !== "sending") setState("idle")
+                    }}
+                    tabIndex={open ? 0 : -1}
+                    aria-label="Student email"
+                  />
+                  <button type="submit" disabled={state === "sending"}>
+                    <span className="ttl-morph-label">Get Started</span>
+                    <span className="ttl-morph-go">{state === "sending" ? <span className="ttl-spin" /> : <Icon d={I.arrow} size={16} />}</span>
+                  </button>
+                </div>
+                <button type="button" className="ttl-btn ttl-btn-glass" onClick={onStart}>
+                  Direct Workspace Launch
+                </button>
+              </form>
+            )}
+            {state === "invalid" ? (
+              <p className="ttl-err" role="alert">
+                Please enter a valid student email address.
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function Dial() {
+  const ticks = Array.from({ length: 72 }, (_, i) => i)
+  return (
+    <svg className="ttl-svg ttl-dial" viewBox="0 0 320 320" width="320" height="320" aria-hidden="true">
+      <circle cx="160" cy="160" r="152" fill="none" stroke="var(--ttl-deep-muted)" strokeOpacity="0.35" />
+      <g className="ttl-dial-ticks">
+        {ticks.map((i) => {
+          const a = (i / ticks.length) * Math.PI * 2
+          const long = i % 6 === 0
+          const r1 = long ? 128 : 136
+          return <line key={i} x1={160 + Math.cos(a) * r1} y1={160 + Math.sin(a) * r1} x2={160 + Math.cos(a) * 146} y2={160 + Math.sin(a) * 146} stroke="var(--ttl-deep-ink)" strokeOpacity={long ? 0.7 : 0.3} strokeWidth={long ? 1.6 : 1} />
+        })}
+      </g>
+      <g className="ttl-dial-ring">
+        <circle cx="160" cy="160" r="112" fill="none" stroke="var(--ttl-deep-muted)" strokeOpacity="0.4" strokeDasharray="2 6" />
+        <circle cx="160" cy="48" r="5" fill="var(--ttl-gold)" />
+        <circle cx="272" cy="160" r="3" fill="var(--ttl-deep-ink)" />
+      </g>
+      <circle cx="160" cy="160" r="88" fill="none" stroke="var(--ttl-deep-muted)" strokeOpacity="0.3" />
+      <circle cx="160" cy="160" r="66" fill="var(--ttl-lilac)" />
+      <circle cx="160" cy="160" r="44" fill="var(--ttl-deep)" fillOpacity="0.12" />
+      <g transform="translate(136 134)" fill="none" stroke="var(--ttl-lilac-ink)" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round">
+        <path d="M4 44h40M8 44V22l16-12 16 12v22M18 44V32h12v12" />
+        <circle cx="24" cy="22" r="3" fill="var(--ttl-gold)" stroke="none" />
+      </g>
+    </svg>
+  )
+}
+
+function StatTile({ s, reduced }: { s: TtlStat; reduced: boolean }) {
+  const ref = React.useRef(null as HTMLDivElement | null)
+  const seen = useSeen(ref)
+  const [v] = useTween([seen ? s.value : 0], reduced, 1600)
+  return (
+    <div className="ttl-stat" ref={ref}>
+      <span className="ttl-stat-rule" aria-hidden="true" />
+      <b aria-label={formatStat(s, s.value)}>{formatStat(s, s.decimals ? v : Math.round(v))}</b>
+      <span>{s.label}</span>
     </div>
   )
 }
 
-// ================= MAIN LANDING PAGE COMPONENT =================
+interface LandingPageProps {
+  onStart: () => void
+  onOpenAuth: (mode?: 'login' | 'register') => void
+  onGoToDashboard: () => void
+}
 
 export const LandingPage: React.FC<LandingPageProps> = ({
   onStart,
   onOpenAuth,
-  onGoToDashboard
+  onGoToDashboard,
 }) => {
-  const rootRef = React.useRef<HTMLDivElement | null>(null)
-  const heroRef = React.useRef<HTMLElement | null>(null)
-  const planRef = React.useRef<HTMLDivElement | null>(null)
-  const planTrig = React.useRef<ScrollTrigger | null>(null)
-  const tabsRef = React.useRef<HTMLDivElement | null>(null)
-
-  const { theme, toggleTheme } = useTheme()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
+  const { theme } = useTheme()
   const isDark = theme === "dark"
+  const pal = isDark ? PALETTES.darkTeal : PALETTES.teal
+  const reduced = useReduced()
+  const rootRef = React.useRef(null as HTMLDivElement | null)
+  const sentinelRef = React.useRef(null as HTMLSpanElement | null)
 
-  const [compact, setCompact] = React.useState(false)
-  const [mobileMenu, setMobileMenu] = React.useState(false)
-  const [activeTab, setActiveTab] = React.useState(0)
-  const [savedSubjects, setSavedSubjects] = React.useState<string[]>([
-    "quantum-electrodynamics",
-    "neural-attention"
-  ])
-  const [tabIndicator, setTabIndicator] = React.useState({ left: 4, width: 0 })
-
-  // Bento state
-  const [searchQuery, setSearchQuery] = React.useState("")
-  const [searchDomain, setSearchDomain] = React.useState<string>("all")
-  const [trackedConcepts, setTrackedConcepts] = React.useState<string[]>([
-    "Backpropagation",
-    "Heisenberg Uncertainty",
-    "Schrödinger Equation"
-  ])
-
-  // Drill state
-  const [targetConcepts, setTargetConcepts] = React.useState(DEFAULT_DRILL.targetConcepts)
-  const [explanationMode, setExplanationMode] = React.useState<"layman" | "rigorous">("layman")
-
-  // Research articles filter
-  const [articleKind, setArticleKind] = React.useState<string>("")
-
-  // Toggle Save Course
-  const toggleSaveSubject = (s: SubjectCard) => {
-    setSavedSubjects((prev) =>
-      prev.includes(s.id) ? prev.filter((x) => x !== s.id) : [...prev, s.id]
-    )
-  }
-
-  // Filtered Bento Subjects
-  const filteredBento = DEFAULT_SUBJECTS.filter((s) => {
-    const matchesQuery =
-      !searchQuery ||
-      s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.brief.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesDomain = searchDomain === "all" || s.domain.toLowerCase() === searchDomain
-    return matchesQuery && matchesDomain
+  const [concepts, setConcepts] = React.useState(DEFAULT_CONCEPTS)
+  const [activity, setActivity] = React.useState(DEFAULT_ACTIVITY)
+  const [last, setLast] = React.useState({
+    score: "14.0% Baseline",
+    from: "Teacher 120B",
+    to: "Child Agent 20B",
+    n: 0,
   })
+  const [scrolled, setScrolled] = React.useState(false)
+  const [feat, setFeat] = React.useState(0)
+  const [ctaSignal, setCtaSignal] = React.useState(0)
+  const alive = React.useRef(true)
 
-  // Filtered Articles
-  const displayedArticles = DEFAULT_ARTICLES.filter(
-    (a) => !articleKind || a.kind === articleKind
-  ).slice(0, 4)
-
-  // Tab indicator measurement
   React.useEffect(() => {
-    const box = tabsRef.current
-    if (!box) return
-    const updatePosition = () => {
-      const activeEl = box.querySelectorAll(".sb-tab")[activeTab] as HTMLElement | undefined
-      if (activeEl) {
-        setTabIndicator({ left: activeEl.offsetLeft, width: activeEl.offsetWidth })
-      }
-    }
-    updatePosition()
-    const ro = new ResizeObserver(updatePosition)
-    ro.observe(box)
-    return () => ro.disconnect()
-  }, [activeTab])
-
-  // GSAP animations
-  React.useEffect(() => {
-    const root = rootRef.current
-    if (!root) return
-
-    let mm: gsap.MatchMedia | null = null
-    const ctx = gsap.context(() => {
-      // Navbar compact state
-      if (heroRef.current) {
-        ScrollTrigger.create({
-          trigger: heroRef.current,
-          start: "bottom 90px",
-          onEnter: () => setCompact(true),
-          onLeaveBack: () => setCompact(false)
-        })
-      }
-
-      mm = gsap.matchMedia()
-      mm.add({ motion: "(prefers-reduced-motion: no-preference)", desk: "(min-width: 961px)" }, (c) => {
-        const { desk } = c.conditions as { desk: boolean }
-
-        // Pinned planner scene
-        if (planRef.current && desk) {
-          planTrig.current = ScrollTrigger.create({
-            trigger: planRef.current,
-            start: "top top+=10",
-            end: "+=220%",
-            pin: true,
-            pinSpacing: true,
-            anticipatePin: 1,
-            snap: {
-              snapTo: (v) => Math.round(v * 2) / 2,
-              duration: { min: 0.25, max: 0.6 },
-              ease: "power2.inOut"
-            },
-            onUpdate: (self) => {
-              const current = Math.min(2, Math.floor(self.progress * 3))
-              setActiveTab(current)
-              root.style.setProperty("--sb-tp", String(self.progress))
-            }
-          })
-        }
-
-        // Hero opening timeline
-        const intro = gsap.timeline({ defaults: { ease: "expo.out" } })
-        intro
-          .from(".sb-hero-img .sb-pic", { scale: 1.18, duration: 2.2, ease: "power3.out" }, 0)
-          .fromTo(
-            ".sb-hero-frame",
-            { clipPath: "inset(12% 8% 12% 8% round 48px)" },
-            { clipPath: "inset(0% 0% 0% 0% round 0px)", duration: 1.6, ease: "expo.inOut" },
-            0
-          )
-          .from(".sb-nav", { y: -30, autoAlpha: 0, duration: 1 }, 0.7)
-          .from(".sb-hero h1 .sb-wi", { yPercent: 115, rotate: 4, duration: 1.3, stagger: 0.06 }, 0.8)
-          .from(".sb-hero-copy > :not(h1)", { y: 20, autoAlpha: 0, duration: 1, stagger: 0.1 }, 1.2)
-          .from(".sb-plate", { y: 40, scale: 0.85, rotate: -6, autoAlpha: 0, duration: 1.2, ease: "back.out(1.6)" }, 1.4)
-
-        // Scroll away fold
-        if (heroRef.current) {
-          const out = gsap.timeline({
-            scrollTrigger: { trigger: heroRef.current, start: "top top", end: "bottom top", scrub: 0.6 }
-          })
-          out
-            .fromTo(".sb-hero-frame", { clipPath: "inset(0% 0% 0% 0% round 0px)" }, { clipPath: "inset(6% 3% 4% 3% round 40px)", ease: "none" }, 0)
-            .to(".sb-hero-img", { yPercent: 14, scale: 1.08, ease: "none" }, 0)
-            .to(".sb-hero-copy", { yPercent: -40, autoAlpha: 0.1, ease: "none" }, 0)
-            .to(".sb-plate", { yPercent: -120, ease: "none" }, 0)
-        }
-
-        // Split text titles
-        gsap.utils.toArray("[data-sb-split]").forEach((el) => {
-          const words = (el as HTMLElement).querySelectorAll(".sb-wi")
-          gsap.from(words, {
-            yPercent: 115,
-            rotate: 3,
-            duration: 1.1,
-            ease: "expo.out",
-            stagger: 0.05,
-            scrollTrigger: { trigger: el as HTMLElement, start: "top 86%" }
-          })
-        })
-
-        // Features spring in
-        gsap.from(".sb-feat", {
-          y: 50,
-          autoAlpha: 0,
-          duration: 1.1,
-          ease: "expo.out",
-          stagger: 0.12,
-          scrollTrigger: { trigger: ".sb-feats", start: "top 82%" }
-        })
-
-        // CTA illuminated text
-        const ctaEl = root.querySelector(".sb-cta")
-        if (ctaEl) {
-          const words = ctaEl.querySelectorAll(".sb-wi")
-          gsap.fromTo(
-            words,
-            { "--sb-lit": "18%" },
-            {
-              "--sb-lit": "100%",
-              ease: "none",
-              stagger: 0.25,
-              scrollTrigger: { trigger: ctaEl, start: "top 75%", end: "center 45%", scrub: 0.5 }
-            }
-          )
-        }
-      })
-    }, root)
-
+    alive.current = true
     return () => {
-      if (mm) mm.revert()
-      ctx.revert()
+      alive.current = false
     }
   }, [])
 
-  return (
-    <div ref={rootRef} className="sb-root" data-theme={isDark ? "dark" : "light"}>
-      <style>{CSS_STYLES}</style>
+  const colors = [...pal.chart]
 
-      {/* Google Fonts */}
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap"
+  const go = React.useCallback(
+    (href?: string) => (e: React.MouseEvent) => {
+      if (!href || !href.startsWith("#")) return
+      const root = rootRef.current
+      if (!root) return
+      const id = href.slice(1)
+      const el = id === "top" || id === "" ? root : (root.querySelector('[data-sec="' + id + '"]') as HTMLElement | null)
+      if (!el) return
+      e.preventDefault()
+      el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" })
+      if (id === "get-started") setCtaSignal((s) => s + 1)
+    },
+    [reduced],
+  )
+
+  const handleTransmitExplanation = React.useCallback(
+    async (t: TtlTransfer) => {
+      await new Promise((r) => setTimeout(r, 850))
+      if (!alive.current) return false
+      setConcepts((prev) =>
+        prev.map((c) =>
+          c.id === t.from ? { ...c, mastery: Math.min(99.4, Math.round((c.mastery + 3.8) * 10) / 10) } : c
+        )
+      )
+      const d = new Date()
+      const date = "Just now"
+      const conceptName = concepts.find((c) => c.id === t.from)?.name || "Quantum Concept"
+      setActivity((list) => [
+        {
+          id: "act_" + d.getTime(),
+          date,
+          text: `Explanation transmitted: "${t.explanation.slice(0, 56)}..."`,
+          concept: conceptName,
+          score: 95,
+          status: "Consolidated",
+        },
+        ...list,
+      ])
+      setLast({
+        score: "92.5% Final",
+        from: conceptName,
+        to: "Child Agent 20B",
+        n: last.n + 1,
+      })
+      return true
+    },
+    [concepts, last.n]
+  )
+
+  React.useEffect(() => {
+    const el = sentinelRef.current
+    if (!el || typeof IntersectionObserver === "undefined") return
+    const io = new IntersectionObserver(([e]) => setScrolled(!e.isIntersecting))
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+
+  React.useEffect(() => {
+    const root = rootRef.current
+    if (!root || typeof IntersectionObserver === "undefined") return
+    const blocks = Array.from(root.querySelectorAll("[data-feat]")) as HTMLElement[]
+    const io = new IntersectionObserver(
+      (es) => {
+        for (const e of es) if (e.isIntersecting) setFeat(+(e.target as HTMLElement).dataset.feat!)
+      },
+      { rootMargin: "-45% 0px -45% 0px" },
+    )
+    blocks.forEach((b) => io.observe(b))
+    return () => io.disconnect()
+  }, [])
+
+  useIso(() => {
+    const root = rootRef.current
+    if (!root) return
+    gsap.registerPlugin(ScrollTrigger)
+    const q = gsap.utils.selector(root)
+    const one = (s: string) => q(s)[0] as Element | undefined
+    const mm = gsap.matchMedia()
+
+    mm.add({ motion: "(prefers-reduced-motion: no-preference)", wide: "(min-width: 900px)" }, (ctx) => {
+      const { motion, wide } = ctx.conditions as { motion: boolean; wide: boolean }
+      if (!motion) return
+
+      gsap.fromTo(q(".ttl-progress"), { scaleX: 0 }, { scaleX: 1, ease: "none", scrollTrigger: { trigger: root, start: "top top", end: "bottom bottom", scrub: 0.3 } })
+
+      const intro = gsap.timeline({ defaults: { ease: "power4.out" } })
+      intro
+        .from(q(".ttl-hero-word"), { yPercent: 118, rotate: 3, duration: 1.15, stagger: 0.055 })
+        .from(q(".ttl-hero-fade"), { y: 18, autoAlpha: 0, duration: 0.9, stagger: 0.08 }, "-=0.8")
+        .from(q(".ttl-device-wrap"), { y: 140, autoAlpha: 0, duration: 1.3 }, "-=0.75")
+        .from(q(".ttl-float"), { x: 70, autoAlpha: 0, duration: 1.1, stagger: 0.14 }, "-=0.9")
+
+      const device = one(".ttl-device")
+      if (device)
+        gsap.fromTo(
+          device,
+          { rotateX: wide ? 24 : 12, scale: wide ? 0.9 : 0.96, y: wide ? -10 : 0 },
+          { rotateX: 0, scale: 1, y: 0, ease: "none", scrollTrigger: { trigger: one(".ttl-device-wrap"), start: "top 96%", end: wide ? "top 18%" : "top 40%", scrub: 0.7 } },
+        )
+
+      if (wide)
+        q(".ttl-float-in").forEach((el, i) =>
+          gsap.to(el, { y: -70 - i * 60, rotate: i ? 2 : -2, ease: "none", scrollTrigger: { trigger: one(".ttl-hero"), start: "top top", end: "bottom top", scrub: true } }),
+        )
+      gsap.to(q(".ttl-hero-glow"), { yPercent: 30, scale: 1.25, ease: "none", scrollTrigger: { trigger: one(".ttl-hero"), start: "top top", end: "bottom top", scrub: true } })
+
+      const words = q(".ttl-bword")
+      if (words.length)
+        gsap.fromTo(words, { opacity: 0.14 }, { opacity: 1, stagger: 0.05, ease: "none", scrollTrigger: { trigger: one(".ttl-benefits-text"), start: "top 82%", end: "bottom 48%", scrub: true } })
+      gsap.fromTo(q(".ttl-stat-rule"), { scaleX: 0 }, { scaleX: 1, duration: 1.2, ease: "power3.inOut", stagger: 0.12, scrollTrigger: { trigger: one(".ttl-stats"), start: "top 85%", once: true } })
+
+      q(".ttl-stage, .ttl-feat-inline").forEach((el) =>
+        gsap.fromTo(
+          el,
+          { clipPath: "inset(10% 8% 10% 8% round 36px)", scale: 0.96 },
+          { clipPath: "inset(0% 0% 0% 0% round 14px)", scale: 1, ease: "none", scrollTrigger: { trigger: el, start: "top 92%", end: "top 40%", scrub: 0.6 } },
+        ),
+      )
+
+      const rise = q("[data-ttl-rise]")
+      gsap.set(rise, { y: 34, autoAlpha: 0 })
+      ScrollTrigger.batch(rise, {
+        start: "top 90%",
+        once: true,
+        onEnter: (els) => gsap.to(els, { y: 0, autoAlpha: 1, duration: 0.95, ease: "power3.out", stagger: 0.07, overwrite: true }),
+      })
+      gsap.fromTo(q(".ttl-price-check path"), { strokeDashoffset: 26 }, { strokeDashoffset: 0, duration: 0.7, ease: "power2.out", stagger: 0.15, scrollTrigger: { trigger: one(".ttl-price-list"), start: "top 80%", once: true } })
+
+      const ctaCard = one(".ttl-cta")
+      if (ctaCard)
+        gsap.fromTo(ctaCard, { scale: 0.9, borderRadius: 44 }, { scale: 1, borderRadius: 10, ease: "none", scrollTrigger: { trigger: ctaCard, start: "top 98%", end: "top 45%", scrub: 0.6 } })
+      const op = one(".ttl-op")
+      if (op) {
+        gsap.to(q(".ttl-dial-ticks"), { rotation: 140, svgOrigin: "160 160", ease: "none", scrollTrigger: { trigger: op, start: "top bottom", end: "bottom top", scrub: 0.5 } })
+        gsap.to(q(".ttl-dial-ring"), { rotation: -220, svgOrigin: "160 160", ease: "none", scrollTrigger: { trigger: op, start: "top bottom", end: "bottom top", scrub: 0.8 } })
+      }
+      gsap.from(q(".ttl-res-card"), { y: 60, autoAlpha: 0, rotate: 1.5, duration: 1, ease: "power3.out", stagger: 0.1, scrollTrigger: { trigger: one(".ttl-res-grid"), start: "top 85%", once: true } })
+
+      const big = one(".ttl-bigmark")
+      if (big) gsap.from(q(".ttl-bigmark span"), { yPercent: 105, ease: "none", stagger: 0.04, scrollTrigger: { trigger: big, start: "top bottom", end: "bottom bottom", scrub: 0.6 } })
+    })
+
+    let t = 0
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => {
+      clearTimeout(t)
+      t = window.setTimeout(() => ScrollTrigger.refresh(), 160)
+    }) : null
+    ro?.observe(root)
+
+    return () => {
+      ro?.disconnect()
+      clearTimeout(t)
+      mm.revert()
+    }
+  }, [isDark])
+
+  const style = {
+    "--ttl-h": "100svh",
+    "--ttl-page": pal.page,
+    "--ttl-paper": pal.paper,
+    "--ttl-ink": pal.ink,
+    "--ttl-muted": pal.muted,
+    "--ttl-rule": pal.rule,
+    "--ttl-deep": pal.deep,
+    "--ttl-deep-ink": pal.deepInk,
+    "--ttl-deep-muted": pal.deepMuted,
+    "--ttl-gold": pal.gold,
+    "--ttl-lilac": pal.lilac,
+    "--ttl-lilac-ink": pal.lilacInk,
+    "--ttl-accent": pal.accent,
+    "--ttl-accent-ink": pal.accentInk,
+    "--ttl-good": pal.good,
+    "--ttl-chart-c": pal.chart[2],
+    "--ttl-glow-a": pal.glow[0],
+    "--ttl-glow-b": pal.glow[1],
+    "--ttl-glow-c": pal.glow[2],
+  } as React.CSSProperties
+
+  const heroTitle = "*Teach the AI.* True mastery\nrequires explanation"
+
+  return (
+    <div ref={rootRef} className="ttl-root" style={style} data-sec="top">
+      <style>{TTL_CSS}</style>
+      <span ref={sentinelRef} className="ttl-sentinel" aria-hidden="true" />
+      
+      <Nav
+        brand="Study Buddy"
+        logo={<BrainMark />}
+        nav={{
+          products: [
+            { label: "Neural Feynman Engine", text: "Master topics by teaching an air-gapped 20B AI child agent.", href: "#features" },
+            { label: "Cognitive Isolation Protocol", text: "Zero ground-truth leakage between Teacher (120B) and Child.", href: "#coverage" },
+            { label: "Teaching Efficiency Score (TES)", text: "Mathematical quantification of retention and conceptual mastery.", href: "#benefits" },
+          ],
+          links: [
+            { label: "Methodology", href: "#features" },
+            { label: "500-Synapse Matrix", href: "#coverage" },
+            { label: "Cognitive Rigor", href: "#pricing" },
+            { label: "Whitepapers", href: "#resources" },
+            { label: "FAQ", href: "#faq" },
+          ],
+        }}
+        go={go}
+        scrolled={scrolled}
+        isAuthenticated={isAuthenticated}
+        user={user}
+        onOpenAuth={onOpenAuth}
+        onGoToDashboard={onGoToDashboard}
+        onStart={onStart}
       />
 
-      {/* Navigation Header */}
-      <div className="sb-navwrap">
-        <nav className="sb-nav" data-compact={compact || mobileMenu} aria-label="Main Navigation">
-          <div className="sb-nav-links">
-            <a href="#workflow">Feynman Method</a>
-            <a href="#stages">The 3 Stages</a>
-            <a href="#subjects">Subjects</a>
-            <a href="#drill">Live Drill</a>
-            <a href="#research">Research</a>
-          </div>
-
-          <a
-            href="#"
-            className="sb-logo"
-            onClick={(e) => {
-              e.preventDefault()
-              window.scrollTo({ top: 0, behavior: "smooth" })
-            }}
-          >
-            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-              <BrainCircuit className="w-4 h-4" />
-            </div>
-            <span>Study Buddy</span>
-          </a>
-
-          <div className="sb-nav-end">
-            <button
-              className="sb-iconbtn"
-              title={`${savedSubjects.length} saved courses`}
-              onClick={() => {
-                const el = document.getElementById("subjects")
-                el?.scrollIntoView({ behavior: "smooth" })
-              }}
-            >
-              <Heart size={18} fill={savedSubjects.length > 0 ? "currentColor" : "none"} />
-              {savedSubjects.length > 0 && <span className="sb-badge">{savedSubjects.length}</span>}
-            </button>
-
-            <button
-              className="sb-iconbtn"
-              onClick={toggleTheme}
-              title={isDark ? "Switch to light theme" : "Switch to dark theme"}
-              aria-label="Toggle theme"
-            >
-              {isDark ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-
-            {isAuthenticated ? (
-              <button className="sb-btn sb-btn-accent" onClick={onGoToDashboard}>
-                <span className="sb-dot" /> Dashboard
-              </button>
-            ) : (
-              <button className="sb-btn sb-btn-accent" onClick={() => onOpenAuth("login")}>
-                <span className="sb-dot" /> Sign In
-              </button>
-            )}
-
-            <button
-              className="sb-iconbtn sb-menu-btn"
-              aria-label="Toggle mobile menu"
-              onClick={() => setMobileMenu((m) => !m)}
-            >
-              {mobileMenu ? <X size={20} /> : <Menu size={20} />}
-            </button>
-          </div>
-        </nav>
-
-        {mobileMenu && (
-          <div className="sb-sheet" role="menu">
-            <a href="#workflow" onClick={() => setMobileMenu(false)}>
-              Feynman Method
-            </a>
-            <a href="#stages" onClick={() => setMobileMenu(false)}>
-              The 3 Stages
-            </a>
-            <a href="#subjects" onClick={() => setMobileMenu(false)}>
-              Subjects
-            </a>
-            <a href="#drill" onClick={() => setMobileMenu(false)}>
-              Live Drill
-            </a>
-            <a href="#research" onClick={() => setMobileMenu(false)}>
-              Research
-            </a>
-            <button
-              onClick={() => {
-                setMobileMenu(false)
-                onStart()
-              }}
-              style={{ color: "var(--sb-accent)", fontWeight: 700 }}
-            >
-              Launch Learning Tool →
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Hero Section */}
-      <header ref={heroRef} className="sb-hero">
-        <div className="sb-hero-frame">
-          <div className="sb-hero-img">
-            <Pic
-              shot={shot("1541339907198-e08756dedf3f", "Atmospheric grand university library", "#0f172a")}
-              w={2400}
-              eager
-            />
-          </div>
-        </div>
-
-        {/* Floating Today's Feynman Drill Card */}
-        <div className="sb-plate" aria-hidden="true">
-          <Pic shot={shot("1635070041078-e363dbe005cb", "Quantum interference lasers", "#1e1b4b")} w={460} h={210} eager />
-          <div>
-            <b>Quantum Mechanics</b>
-            <small style={{ display: "block" }}>Wave-Particle Duality & De Broglie</small>
-          </div>
-          <div className="sb-plate-bars">
-            <div>
-              Baseline: 15%
-              <div className="sb-bar">
-                <i style={{ transform: "scaleX(0.15)", background: "#ef4444" }} />
-              </div>
-            </div>
-            <div>
-              Final: 92%
-              <div className="sb-bar">
-                <i style={{ transform: "scaleX(0.92)", background: "#22c55e" }} />
-              </div>
-            </div>
-            <div>
-              TES: 89
-              <div className="sb-bar">
-                <i style={{ transform: "scaleX(0.89)", background: "var(--sb-accent)" }} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="sb-hero-copy">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-white backdrop-blur-md border border-white/20">
-            <Sparkles size={13} className="text-blue-400" />
-            Neural Feynman Engine • 120B Flagship Reasoning
-          </div>
-          <h1>
-            <Words text={"The fastest way\nto learn is to teach."} />
+      {/* Hero */}
+      <section className="ttl-hero" data-sec="dashboard">
+        <span className="ttl-hero-glow" aria-hidden="true" />
+        <span className="ttl-hero-grid" aria-hidden="true" />
+        <div className="ttl-wrap ttl-hero-head">
+          <h1 className="ttl-h1">
+            {markedWords(heroTitle).map((w, i, all) => (
+              <React.Fragment key={i}>
+                <span className="ttl-mask">
+                  <span className="ttl-hero-word">
+                    <span className={w.mark ? "ttl-gold" : undefined}>{w.word}</span>
+                    {w.tail}
+                  </span>
+                </span>
+                {w.br ? <br /> : w.glue || i === all.length - 1 ? null : " "}
+              </React.Fragment>
+            ))}
           </h1>
-          <p>
-            Upload your syllabus, lecture slides, or textbook. Study Buddy extracts core concepts and spawns an AI student with zero knowledge. Teach it step-by-step—and prove your true mastery when our 120B Teacher Agent evaluates the results.
+          <p className="ttl-hero-text ttl-hero-fade">
+            Passive cramming creates an illusion of competence. Study Buddy pairs you with an isolated Child AI that knows nothing until you teach it—scored by an impartial 120B Teacher Agent.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            <button className="sb-btn sb-btn-light" onClick={onStart}>
-              <span className="sb-dot" style={{ background: "var(--sb-accent)" }} />
-              Start Feynman Drill Free
-            </button>
+          <div className="ttl-hero-ctas ttl-hero-fade">
             <button
-              className="sb-btn sb-btn-ghost"
-              style={{ background: "rgba(255,255,255,0.1)", color: "#ffffff", border: "1px solid rgba(255,255,255,0.25)" }}
-              onClick={() => onOpenAuth("login")}
+              type="button"
+              className="ttl-btn ttl-btn-dark"
+              onClick={onStart}
             >
-              Sign In to Dashboard
+              Launch Learning Session
             </button>
-          </div>
-        </div>
-
-        <div className="sb-scrollcue" aria-hidden="true" />
-      </header>
-
-      {/* Features Section: The 3 Core Pillars */}
-      <section id="workflow" className="sb-wrap sb-feats" aria-label="Why it works">
-        <div className="sb-feat">
-          <div className="sb-feat-art">
-            <FeynmanLoopArt />
-          </div>
-          <h3>The Feynman Pedagogical Loop</h3>
-          <p>
-            You explain complex theorems to the Child Agent in plain English. Forcing yourself to explain to a beginner destroys the illusion of competence.
-          </p>
-        </div>
-
-        <div className="sb-feat">
-          <div className="sb-feat-art">
-            <CognitiveShieldArt />
-          </div>
-          <h3>Strict Cognitive Isolation</h3>
-          <p>
-            The Child Agent has 0% direct access to your uploaded PDF. It knows only what you personally teach it, preventing AI hallucination.
-          </p>
-        </div>
-
-        <div className="sb-feat">
-          <div className="sb-feat-art">
-            <TesGaugeArt />
-            <span className="sb-tag" style={{ left: -6, top: 10 }}>
-              Δ Score +77%
-            </span>
-            <span className="sb-tag" style={{ right: -4, top: -6 }}>
-              TES 89 / 100
-            </span>
-          </div>
-          <h3>120B Teacher & Objective TES</h3>
-          <p>
-            Our flagship 120B reasoning model administers cold baseline and final exams, calculating your true Teaching Effectiveness Score.
-          </p>
-        </div>
-      </section>
-
-      {/* Pinned Planner Section: The 3 Stages of Mastery */}
-      <section id="stages" className="sb-plan-outer" aria-label="The 3 Stages of Mastery">
-        <div ref={planRef}>
-          <div className="sb-plan">
-            <div ref={tabsRef} className="sb-tabs" role="tablist">
-              <span className="sb-tab-ind" style={{ left: tabIndicator.left, width: tabIndicator.width }}>
-                <i />
-              </span>
-              {PLANNER_STAGES.map((p, i) => (
-                <button
-                  key={p.tab}
-                  className="sb-tab"
-                  role="tab"
-                  aria-selected={activeTab === i}
-                  onClick={() => setActiveTab(i)}
-                >
-                  {p.tab}
-                </button>
-              ))}
-            </div>
-
-            <div className="sb-plan-grid">
-              <div className="sb-plan-copy">
-                {PLANNER_STAGES.map((p, i) => (
-                  <div key={p.tab} className="sb-plan-pane" data-on={activeTab === i}>
-                    <span className="sb-eyebrow">
-                      <i />
-                      {p.eyebrow}
-                    </span>
-                    <h3>{p.title}</h3>
-                    <p>{p.text}</p>
-                    <ul className="sb-points">
-                      {p.points.map((pt, j) => (
-                        <li key={j}>
-                          <ShieldCheck size={18} />
-                          {pt}
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="sb-plan-progress" aria-hidden="true">
-                      {PLANNER_STAGES.map((_, j) => (
-                        <span key={j}>
-                          <i style={{ transform: `scaleX(${j < activeTab ? 1 : j === activeTab ? "var(--sb-tp, 1)" : 0})` }} />
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <PlannerPhoneMockup tab={activeTab} />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Subjects Coverflow Showcase */}
-      <section id="subjects" className="sb-sec" aria-label="Explore course subjects">
-        <div className="sb-wrap sb-center">
-          <h2 className="sb-h2" data-sb-split="">
-            <Words text={"Active Mastery Across\nEvery Discipline."} />
-          </h2>
-          <p className="sb-lede">
-            From theoretical quantum mechanics to distributed operating systems. Select any module to preview concepts or upload your own course materials.
-          </p>
-        </div>
-        <SubjectsShowcase
-          subjects={DEFAULT_SUBJECTS}
-          saved={savedSubjects}
-          onSave={toggleSaveSubject}
-        />
-      </section>
-
-      {/* Bento Grid: Search, Concept Marquee & Testimonials */}
-      <section className="sb-wrap" style={{ paddingBottom: "clamp(72px, 10vw, 130px)" }}>
-        <div className="sb-bento-head">
-          <div>
-            <h2 className="sb-h2" data-sb-split="" style={{ fontSize: "clamp(30px, 4vw, 44px)" }}>
-              <Words text={"The Complete Neural\nLearning Architecture."} />
-            </h2>
-          </div>
-          <p className="sb-lede" style={{ maxWidth: "36ch" }}>
-            Explore verified concepts, track mastery, and challenge yourself with speech-enabled Socratic reasoning.
-          </p>
-        </div>
-
-        <div className="sb-bento">
-          {/* Tile 1: Live Concept Search */}
-          <div className="sb-tile">
-            <div style={{ display: "grid", gap: 10 }}>
-              <label className="sb-search">
-                <Search size={16} />
-                <input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search concepts (e.g. entropy, attention, waves)..."
-                />
-                {searchQuery && (
-                  <button onClick={() => setSearchQuery("")} style={{ border: "none", background: "none", cursor: "pointer" }}>
-                    <X size={14} />
-                  </button>
-                )}
-              </label>
-
-              <div className="sb-filters">
-                {[
-                  ["all", "All Domains"],
-                  ["physics", "Physics"],
-                  ["computer science", "CS & AI"],
-                  ["biomedical", "Biomedical"],
-                  ["mathematics", "Mathematics"]
-                ].map(([domainKey, label]) => (
-                  <button
-                    key={domainKey}
-                    className="sb-chip"
-                    aria-pressed={searchDomain === domainKey}
-                    onClick={() => setSearchDomain(domainKey)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="sb-results">
-                {filteredBento.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: "20px 0", color: "var(--sb-muted)", fontSize: 12 }}>
-                    No subjects match your query.
-                  </div>
-                ) : (
-                  filteredBento.map((item) => (
-                    <div key={item.id} className="sb-result">
-                      <Pic shot={item.image} w={84} h={84} />
-                      <div>
-                        <b>{item.name}</b>
-                        <span className="sb-sub">{item.domain} · {item.conceptsCount} Concepts</span>
-                      </div>
-                      <span className="sb-chip" style={{ fontSize: 10.5 }}>
-                        {item.difficulty}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-            <p className="sb-tile-t">
-              <b>Instant Concept Filtration.</b> Filter across physics, mathematics, systems, and biology. {filteredBento.length} of {DEFAULT_SUBJECTS.length} modules visible.
-            </p>
-          </div>
-
-          {/* Tile 2: Concept Marquee */}
-          <div className="sb-tile">
-            <div className="sb-marquee">
-              <div className="sb-mrow">
-                {MARQUEE_CONCEPTS.slice(0, 10).map((c, i) => (
-                  <button
-                    key={i}
-                    className="sb-chip"
-                    aria-pressed={trackedConcepts.includes(c)}
-                    onClick={() =>
-                      setTrackedConcepts((prev) =>
-                        prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]
-                      )
-                    }
-                  >
-                    {trackedConcepts.includes(c) && <CheckCircle2 size={11} />}
-                    {c}
-                  </button>
-                ))}
-              </div>
-              <div className="sb-mrow" data-rev="true">
-                {MARQUEE_CONCEPTS.slice(10).map((c, i) => (
-                  <button
-                    key={i}
-                    className="sb-chip"
-                    aria-pressed={trackedConcepts.includes(c)}
-                    onClick={() =>
-                      setTrackedConcepts((prev) =>
-                        prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]
-                      )
-                    }
-                  >
-                    {trackedConcepts.includes(c) && <CheckCircle2 size={11} />}
-                    {c}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div
-              style={{
-                padding: 12,
-                borderRadius: 16,
-                background: "var(--sb-card)",
-                boxShadow: "inset 0 0 0 1px var(--sb-line)",
-                display: "grid",
-                gap: 8
-              }}
+            <a
+              className="ttl-btn ttl-btn-lilac"
+              href="#features"
+              onClick={go("#features")}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 700 }}>
-                <span>Tracked Concept Mastery</span>
-                <span>Feynman Clarity</span>
+              Explore Methodology
+            </a>
+          </div>
+        </div>
+
+        <div className="ttl-device-wrap">
+          <div className="ttl-device">
+            <div className="ttl-device-bezel">
+              <FeynmanStudio
+                brand="Study Buddy"
+                subject="Advanced Quantum Mechanics • PHYS 401"
+                concepts={concepts}
+                activity={activity}
+                colors={colors}
+                reduced={reduced}
+                onTransmitExplanation={handleTransmitExplanation}
+                onLaunchFullSession={onStart}
+              />
+            </div>
+          </div>
+          <div className="ttl-floats" aria-live="polite">
+            <div className="ttl-float">
+              <div className="ttl-float-in">
+                <FlowCard
+                  title="Cold Baseline Examination"
+                  score="14.0% Score"
+                  note="Zero Document Leakage"
+                  from="Teacher Agent (120B)"
+                  to="Child Agent (20B)"
+                  flash={last.n}
+                />
               </div>
-              {trackedConcepts.slice(-3).map((concept) => (
-                <div key={concept} style={{ display: "grid", gridTemplateColumns: "100px 1fr 36px", gap: 8, alignItems: "center", fontSize: 11 }}>
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{concept}</span>
-                  <div className="sb-bar" style={{ margin: 0, height: 6 }}>
-                    <i style={{ transform: "scaleX(0.92)" }} />
-                  </div>
-                  <b style={{ textAlign: "right" }}>92%</b>
-                </div>
+            </div>
+            <div className="ttl-float ttl-float-2">
+              <div className="ttl-float-in">
+                <FlowCard
+                  title="Teacher Agent Verification"
+                  score="92.5% Final"
+                  note="+78.5% Net Delta (TES)"
+                  from="Final Blind Exam"
+                  to="Mastery Certified"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits */}
+      <section className="ttl-sec ttl-benefits" data-sec="benefits">
+        <div className="ttl-wrap ttl-split">
+          <div className="ttl-label">The Science of Retention</div>
+          <div>
+            <p className="ttl-benefits-text">
+              <Marked
+                text={"Highlighting textbooks and re-reading notes gives the dangerous illusion of comprehension. With *Study Buddy's Neural Feynman Architecture,* you cannot hide behind jargon. If you cannot explain a concept simply enough for our isolated Child Agent to score 90% on a blind exam, you do not truly understand it."}
+                wordClass="ttl-bword"
+              />
+            </p>
+            <div className="ttl-stats">
+              {DEFAULT_STATS.map((s) => (
+                <StatTile key={s.label} s={s} reduced={reduced} />
               ))}
             </div>
-
-            <p className="sb-tile-t">
-              <b>Neural Concept Mastery.</b> Track essential concepts across all study sessions. Tracking {trackedConcepts.length} core theoretical topics.
-            </p>
           </div>
-
-          {/* Tile 3: Scholar Testimonial 1 */}
-          <figure className="sb-tile" style={{ background: "var(--sb-peach)" }}>
-            <blockquote className="sb-quote">
-              &ldquo;{DEFAULT_TESTIMONIALS[0].quote}&rdquo;
-            </blockquote>
-            <figcaption className="sb-who">
-              {DEFAULT_TESTIMONIALS[0].image && <Pic shot={DEFAULT_TESTIMONIALS[0].image} w={76} h={76} />}
-              <div>
-                <b>{DEFAULT_TESTIMONIALS[0].name}</b>
-                <small>{DEFAULT_TESTIMONIALS[0].role}</small>
-              </div>
-            </figcaption>
-          </figure>
-
-          {/* Tile 4: Professor Testimonial 2 (Wide) */}
-          <figure className="sb-tile sb-wide" style={{ background: "var(--sb-sage)" }}>
-            <blockquote className="sb-quote">
-              &ldquo;{DEFAULT_TESTIMONIALS[1].quote}&rdquo;
-            </blockquote>
-            <figcaption className="sb-who">
-              {DEFAULT_TESTIMONIALS[1].image && <Pic shot={DEFAULT_TESTIMONIALS[1].image} w={84} h={84} />}
-              <div>
-                <b>{DEFAULT_TESTIMONIALS[1].name}</b>
-                <small>{DEFAULT_TESTIMONIALS[1].role}</small>
-              </div>
-            </figcaption>
-          </figure>
-
-          {/* Tile 5: Medical Scholar Testimonial 3 */}
-          <figure className="sb-tile" style={{ background: "var(--sb-sky)" }}>
-            <blockquote className="sb-quote">
-              &ldquo;{DEFAULT_TESTIMONIALS[2].quote}&rdquo;
-            </blockquote>
-            <figcaption className="sb-who">
-              {DEFAULT_TESTIMONIALS[2].image && <Pic shot={DEFAULT_TESTIMONIALS[2].image} w={76} h={76} />}
-              <div>
-                <b>{DEFAULT_TESTIMONIALS[2].name}</b>
-                <small>{DEFAULT_TESTIMONIALS[2].role}</small>
-              </div>
-            </figcaption>
-          </figure>
         </div>
       </section>
 
-      {/* Interactive Feynman Drill Simulator */}
-      <section id="drill" className="sb-wrap" style={{ paddingBottom: "clamp(72px, 10vw, 130px)" }}>
-        <h2 className="sb-h2" data-sb-split="" style={{ fontSize: "clamp(30px, 4vw, 44px)" }}>
-          <Words text={"Simulate an Active\nFeynman Teaching Session."} />
-        </h2>
-
-        <div className="sb-drill">
-          {/* Phone preview */}
-          <div className="sb-tile sb-drill-phone">
-            <InteractiveDrillPhone exercise={DEFAULT_DRILL} />
-            <p className="sb-tile-t">
-              <b>Interactive Drill Simulator.</b> Full-screen Socratic prompts with step timers to guide your real-time explanations.
-            </p>
-          </div>
-
-          {/* Stepper Card */}
-          <div className="sb-tile" style={{ justifyContent: "center", textAlign: "center" }}>
-            <Pic shot={DEFAULT_DRILL.image} w={190} h={190} style={{ margin: "0 auto", borderRadius: "50%" }} />
-            <div>
-              <b style={{ fontSize: 16 }}>{DEFAULT_DRILL.name}</b>
-              <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 6 }}>
-                <span className="sb-chip">
-                  <Clock size={12} /> {DEFAULT_DRILL.time} min drill
-                </span>
-                <span className="sb-chip">
-                  <Flame size={12} /> High Cognitive Demand
-                </span>
-              </div>
-            </div>
-
-            <div className="sb-stepper" style={{ margin: "0 auto" }}>
-              <button
-                className="sb-iconbtn"
-                onClick={() => setTargetConcepts((c) => Math.max(1, c - 1))}
-                disabled={targetConcepts <= 1}
-              >
-                <Minus size={14} />
-              </button>
-              <output>
-                <b>{targetConcepts}</b>
-                <small>Concepts</small>
-              </output>
-              <button
-                className="sb-iconbtn"
-                onClick={() => setTargetConcepts((c) => Math.min(12, c + 1))}
-                disabled={targetConcepts >= 12}
-              >
-                <Plus size={14} />
-              </button>
-            </div>
-            <p className="sb-tile-t" style={{ textAlign: "center" }}>
-              <b>Target Conceptual Scope.</b> Dial the breadth of concepts the Child Agent will test you on during the session.
-            </p>
-          </div>
-
-          {/* Layman vs Rigorous Switch */}
-          <div className="sb-tile">
-            <div style={{ display: "grid", gap: 14 }}>
-              <div className="sb-switch" style={{ justifyContent: "center" }}>
-                <span data-on={explanationMode === "layman"}>Plain English</span>
-                <button
-                  role="switch"
-                  aria-checked={explanationMode === "rigorous"}
-                  onClick={() =>
-                    setExplanationMode((m) => (m === "layman" ? "rigorous" : "layman"))
-                  }
-                >
-                  <i />
-                </button>
-                <span data-on={explanationMode === "rigorous"}>Academic Rigor</span>
-              </div>
-
-              <div
-                style={{
-                  padding: 16,
-                  borderRadius: 16,
-                  background: "var(--sb-card)",
-                  boxShadow: "inset 0 0 0 1px var(--sb-line)",
-                  fontSize: 13,
-                  lineHeight: 1.6
-                }}
-              >
-                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--sb-accent)", marginBottom: 4 }}>
-                  {explanationMode === "layman" ? "FEYNMAN ANALOGY MODE" : "GRADUATE RIGOR MODE"}
+      {/* Features */}
+      <section className="ttl-sec ttl-feats" data-sec="features">
+        <div className="ttl-wrap">
+          <div className="ttl-label ttl-feat-label">Three-Pillar Feynman Cycle</div>
+          <div className="ttl-feat-grid">
+            <div className="ttl-stage-col">
+              <div className="ttl-stage" data-scene={feat % 3}>
+                {DEFAULT_FEATURES.map((_, i) => (
+                  <div key={i} className="ttl-stage-layer" data-on={feat === i || undefined} aria-hidden={feat !== i}>
+                    <Scene i={i} active={feat === i} reduced={reduced} colors={colors} />
+                  </div>
+                ))}
+                <div className="ttl-stage-count" aria-hidden="true">
+                  <b>{String(feat + 1).padStart(2, "0")}</b> / {String(DEFAULT_FEATURES.length).padStart(2, "0")}
                 </div>
-                {explanationMode === "layman"
-                  ? DEFAULT_DRILL.laymanExplanation
-                  : DEFAULT_DRILL.rigorousExplanation}
               </div>
             </div>
-            <p className="sb-tile-t">
-              <b>Dual Explanatory Modes.</b> Master concepts by translating dense academic theory into intuitive layman analogies.
-            </p>
+            <div className="ttl-feat-copy">
+              {DEFAULT_FEATURES.map((f, i) => (
+                <article key={f.title} className="ttl-feat" data-feat={i} data-on={feat === i || undefined}>
+                  <div className="ttl-feat-inline">
+                    <Scene i={i} active={feat === i} reduced={reduced} colors={colors} />
+                  </div>
+                  <span className="ttl-feat-n">{String(i + 1).padStart(2, "0")}</span>
+                  <h3 className="ttl-h3 ttl-feat-title">{f.title}</h3>
+                  <p>{f.text}</p>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Domain Categories */}
-      <section className="sb-wrap" style={{ paddingBottom: "clamp(72px, 10vw, 130px)" }}>
-        <div className="sb-center">
-          <h2 className="sb-h2" data-sb-split="" style={{ fontSize: "clamp(30px, 4vw, 44px)" }}>
-            <Words text={"Explore Academic Domains."} />
+      {/* Coverage (The 500-Synapse Matrix) */}
+      <Coverage
+        title="Empirical mastery across up to *500 Neural Concept Nodes* per syllabus"
+        items={DEFAULT_COVERAGE}
+        reduced={reduced}
+      />
+
+      {/* Cognitive Architecture & Comparison (Dark section) */}
+      <PricingComparison reduced={reduced} />
+
+      {/* FAQ */}
+      <Faq f={{ title: "Everything you need to know about\n*Neural Feynman Learning*", items: DEFAULT_FAQ }} />
+
+      {/* CTA */}
+      <Cta
+        brand="Study Buddy"
+        openSignal={ctaSignal}
+        reduced={reduced}
+        onStart={onStart}
+      />
+
+      {/* Dial / Operating Section */}
+      <section className="ttl-sec ttl-op-sec" data-sec="operating">
+        <div className="ttl-wrap">
+          <div className="ttl-op">
+            <div className="ttl-op-copy">
+              <h2 className="ttl-h2">
+                <Marked text={"Built on Bloom's Taxonomy and\n*Cognitive Load Theory*"} />
+              </h2>
+              <p>
+                From basic recognition to high-order synthesis. The Feynman dial turns passive information consumers into authoritative subject masters through active generative teaching.
+              </p>
+              <a className="ttl-link-arrow" href="#resources" onClick={go("#resources")}>
+                Explore cognitive science whitepapers
+                <Icon d={I.arrow} size={15} />
+              </a>
+            </div>
+            <div className="ttl-op-art">
+              <Dial />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Resources with Generated High-End Visuals */}
+      <section className="ttl-sec ttl-res" data-sec="resources">
+        <div className="ttl-wrap">
+          <h2 className="ttl-h2 ttl-res-title" data-ttl-rise>
+            <Marked text={"*Curated Research* & Architectural Whitepapers on\nActive Generative Learning"} />
           </h2>
-        </div>
-        <div className="sb-cats">
-          {DEFAULT_CATEGORIES.map((c) => (
-            <div key={c.name} className="sb-cat">
-              <span className="sb-cat-spin">
-                <Pic shot={c.image} w={260} h={260} />
-              </span>
-              <span className="sb-cat-l">
-                <span>{c.name}</span>
-                <small>{c.count} topics</small>
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Research & Publications Section */}
-      <section id="research" className="sb-wrap" style={{ paddingBottom: "clamp(60px, 8vw, 100px)" }}>
-        <div className="sb-res">
-          <div>
-            <h2 className="sb-h2" data-sb-split="" style={{ fontSize: "clamp(30px, 4vw, 44px)" }}>
-              <Words text={"Cognitive Science\n& Technical Research."} />
-            </h2>
-            <p className="sb-lede" style={{ marginTop: 12 }}>
-              Read our peer-reviewed whitepapers on LLM cognitive isolation, the mathematics of the TES metric, and empirical trials in university classrooms.
-            </p>
-          </div>
-
-          <div>
-            <div className="sb-articles">
-              {displayedArticles.map((a) => (
-                <div key={a.id} className="sb-article">
-                  <Pic shot={a.image} w={200} h={136} />
-                  <div>
-                    <b>{a.title}</b>
-                    <small>
-                      {a.kind} · {a.date} · {a.read}
-                    </small>
-                  </div>
-                  <ArrowRight size={18} style={{ color: "var(--sb-accent)" }} />
+          <div className="ttl-res-grid">
+            {DEFAULT_RESOURCES.map((r) => (
+              <a key={r.title} className="ttl-res-card" href={r.href ?? "#"} onClick={(e) => e.preventDefault()}>
+                <div className="ttl-res-thumb">
+                  {r.image ? (
+                    <img
+                      src={r.image}
+                      alt={r.title}
+                      className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-[#0c2f35] text-[#93aaa6]">
+                      <Icon d={I.brain} size={32} />
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
-
-            <div className="sb-kinds">
-              {(["Knowledge", "Blog", "Podcasts"] as const).map((k) => (
-                <button
-                  key={k}
-                  className="sb-kind"
-                  aria-pressed={articleKind === k}
-                  onClick={() => setArticleKind((prev) => (prev === k ? "" : k))}
-                >
-                  {k}
-                  <small>
-                    {DEFAULT_ARTICLES.filter((a) => a.kind === k).length} {k === "Podcasts" ? "episodes" : "papers"}
-                  </small>
-                </button>
-              ))}
-            </div>
+                <div className="ttl-res-cap">
+                  <b>{r.title}</b>
+                  <span>
+                    {r.tag}
+                    <Icon d={I.arrow} size={14} />
+                  </span>
+                </div>
+              </a>
+            ))}
           </div>
         </div>
-      </section>
-
-      {/* Scroll-Scrubbed Call To Action */}
-      <section className="sb-cta">
-        <h2 className="sb-h2 sb-wrap" data-sb-split="">
-          <Words text={"Stop rereading.\nStart teaching."} />
-        </h2>
-        <p className="sb-lede">
-          Upload any lecture note or syllabus PDF. Master complex subjects in minutes through the proven Feynman technique.
-        </p>
-        <button className="sb-btn sb-btn-accent" onClick={onStart} style={{ position: "relative" }}>
-          <span className="sb-dot" style={{ background: "#ffffff" }} />
-          Launch Study Buddy Free
-        </button>
       </section>
 
       {/* Footer */}
-      <footer className="sb-foot">
-        <div className="sb-foot-top">
-          <div>
-            <div className="sb-logo">
-              <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm">
-                <BrainCircuit className="w-3.5 h-3.5" />
-              </div>
+      <footer className="ttl-foot">
+        <div className="ttl-wrap">
+          <div className="ttl-foot-grid">
+            <a href="#" className="ttl-brand" onClick={go("#top")}>
+              <BrainMark />
               <span>Study Buddy</span>
+            </a>
+            {DEFAULT_FOOTER_COLUMNS.map((c) => (
+              <div key={c.title} className="ttl-foot-col">
+                <b>{c.title}</b>
+                {c.links.map((l) => (
+                  <a key={l.label} href={l.href ?? "#"} onClick={go(l.href)}>
+                    {l.label}
+                  </a>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div className="ttl-foot-bar">
+            <div className="ttl-foot-legal-links">
+              <a href="#">Methodology Terms</a>
+              <a href="#">Academic Privacy</a>
+              <a href="#">Zero Data Retention</a>
+              <span>© Study Buddy Neural Inc.</span>
             </div>
-            <p style={{ fontSize: 13, color: "var(--sb-muted)", marginTop: 8 }}>
-              You teach the AI. That's how you master anything.
-            </p>
+            <div className="ttl-social">
+              {[
+                { label: "X", d: "M4 4l16 16M20 4L4 20" },
+                { label: "LinkedIn", d: "M7 10v7M7 7v.01M11 17v-7M11 13a3 3 0 016 0v4" },
+                { label: "YouTube", d: "M10 9l5 3-5 3zM3 12c0-3 .5-5 3-5.5C8 6 16 6 18 6.5c2.5.5 3 2.5 3 5.5s-.5 5-3 5.5c-2 .5-10 .5-12 0C3.5 17 3 15 3 12z" },
+              ].map((s) => (
+                <a key={s.label} href="#" aria-label={s.label} onClick={(e) => e.preventDefault()}>
+                  <Icon d={s.d} size={15} />
+                </a>
+              ))}
+            </div>
           </div>
-
-          <div>
-            <h4>Product</h4>
-            <ul>
-              <li><a href="#workflow">Feynman Loop</a></li>
-              <li><a href="#stages">The 3 Stages</a></li>
-              <li><a href="#drill">Live Simulator</a></li>
-              <li><a href="#subjects">Course Catalog</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4>Architecture</h4>
-            <ul>
-              <li><a href="#stages">Cognitive Isolation</a></li>
-              <li><a href="#stages">120B Teacher Agent</a></li>
-              <li><a href="#stages">Groq Cloud Inference</a></li>
-              <li><a href="#stages">Supabase PostgreSQL</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4>Research</h4>
-            <ul>
-              <li><a href="#research">Whitepapers</a></li>
-              <li><a href="#research">TES Metric Specs</a></li>
-              <li><a href="#research">Cognitive Evals</a></li>
-              <li><a href="#research">Pedagogy Blog</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4>Account</h4>
-            <ul>
-              <li><button onClick={() => onOpenAuth("login")} style={{ background: "none", border: "none", padding: 0, font: "inherit", cursor: "pointer", color: "inherit" }}>Sign In</button></li>
-              <li><button onClick={() => onOpenAuth("register")} style={{ background: "none", border: "none", padding: 0, font: "inherit", cursor: "pointer", color: "inherit" }}>Register</button></li>
-              <li><button onClick={onGoToDashboard} style={{ background: "none", border: "none", padding: 0, font: "inherit", cursor: "pointer", color: "inherit" }}>Dashboard</button></li>
-            </ul>
-          </div>
+          <p className="ttl-legal">
+            Study Buddy is an active educational synthesis platform based on the Feynman Technique, Cognitive Load Theory, and dual-agent LLM air-gapping. All tests and metrics are generated empirically for conceptual mastery verification.
+          </p>
         </div>
-
-        <div className="sb-foot-word" aria-hidden="true">Study Buddy</div>
-
-        <div className="sb-foot-bot">
-          <div>
-            <span>&copy; {new Date().getFullYear()} Study Buddy AI. All rights reserved.</span>
-          </div>
-          <span>Powered by Groq Cloud Inference & Supabase PostgreSQL</span>
+        <div className="ttl-bigmark" aria-hidden="true">
+          {"STUDY BUDDY".split("").map((ch, i) => (
+            <span key={i}>{ch === " " ? " " : ch}</span>
+          ))}
         </div>
       </footer>
     </div>
   )
 }
 
-export default LandingPage
+const TTL_CSS = `
+.ttl-root{--ttl-sans:"Inter Tight","Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;position:relative;min-height:var(--ttl-h);background:var(--ttl-page);color:var(--ttl-ink);font-family:var(--ttl-sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:clip;isolation:isolate;transition:background-color .35s,color .35s}
+.ttl-root *,.ttl-root *::before,.ttl-root *::after{box-sizing:border-box}
+.ttl-root :where(button){font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+.ttl-root :where(input,textarea){font:inherit;color:inherit}
+.ttl-root :where(a){color:inherit;text-decoration:none}
+.ttl-root :where(h1,h2,h3,p,ul,dl,dd){margin:0;padding:0}
+.ttl-root :where(ul){list-style:none}
+.ttl-root :where(button,a,input,textarea,[tabindex]):focus-visible{outline:2px solid var(--ttl-gold);outline-offset:2px;border-radius:6px}
+.ttl-svg{display:block;max-width:none;flex:none}
+.ttl-sentinel{position:absolute;top:0;left:0;width:1px;height:24px;pointer-events:none}
+.ttl-wrap{width:100%;max-width:1200px;margin:0 auto;padding:0 24px;position:relative}
+.ttl-gold{color:var(--ttl-gold)}
+.ttl-h1{font-size:clamp(42px,7.2vw,92px);line-height:1.02;letter-spacing:-.04em;font-weight:400;text-align:center}
+.ttl-h2{font-size:clamp(30px,4.4vw,52px);line-height:1.04;letter-spacing:-.035em;font-weight:400}
+.ttl-h3{font-size:18px;line-height:1.25;letter-spacing:-.01em;font-weight:500}
+.ttl-k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ttl-muted)}
+.ttl-fine{font-size:12px;line-height:1.5;color:var(--ttl-muted)}
+.ttl-mask{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.08em;margin-bottom:-.08em}
+.ttl-hero-word{display:inline-block;will-change:transform}
+
+.ttl-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 22px;border-radius:999px;font-size:14px;font-weight:500;white-space:nowrap;transition:transform .25s cubic-bezier(.2,.8,.2,1),background-color .25s,box-shadow .25s,opacity .2s;cursor:pointer}
+.ttl-btn:hover{transform:translateY(-1px)}
+.ttl-btn:active{transform:translateY(0) scale(.98)}
+.ttl-btn:disabled{opacity:.6;cursor:default;transform:none}
+.ttl-btn-sm{height:36px;padding:0 16px;font-size:13px}
+.ttl-btn-dark{background:var(--ttl-accent);color:var(--ttl-accent-ink)}
+.ttl-btn-dark:hover{box-shadow:0 10px 24px -12px var(--ttl-accent)}
+.ttl-btn-lilac{background:var(--ttl-lilac);color:var(--ttl-lilac-ink)}
+.ttl-btn-ghost{border:1px solid var(--ttl-rule);background:var(--ttl-paper)}
+.ttl-btn-glass{background:rgba(255,255,255,.42);color:var(--ttl-ink);border:1px solid rgba(255,255,255,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.ttl-btn[data-busy]{opacity:.8}
+.ttl-link{font-size:13px;text-decoration:underline;text-underline-offset:3px;color:var(--ttl-muted);background:none;border:0;cursor:pointer}
+.ttl-link:hover{color:var(--ttl-ink)}
+
+/* nav */
+.ttl-nav{position:sticky;top:0;z-index:40;transition:background-color .35s,box-shadow .35s,backdrop-filter .35s}
+.ttl-nav[data-scrolled]{background:color-mix(in srgb,var(--ttl-page) 82%,transparent);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);box-shadow:0 1px 0 var(--ttl-rule)}
+.ttl-nav-in{max-width:1200px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;gap:28px;position:relative}
+.ttl-brand{display:inline-flex;align-items:center;gap:10px;font-weight:600;font-size:16px;letter-spacing:-.02em}
+.ttl-nav-links{display:flex;align-items:center;gap:6px;flex:1}
+.ttl-nav-link{display:inline-flex;align-items:center;gap:4px;padding:8px 10px;border-radius:8px;font-size:14px;color:var(--ttl-ink);opacity:.82;transition:opacity .2s,background-color .2s;cursor:pointer}
+.ttl-nav-link:hover,.ttl-nav-link[aria-expanded="true"]{opacity:1;background:color-mix(in srgb,var(--ttl-ink) 5%,transparent)}
+.ttl-caret{transition:transform .3s}
+.ttl-nav-link[aria-expanded="true"] .ttl-caret{transform:rotate(180deg)}
+.ttl-nav-end{display:flex;align-items:center;gap:8px;margin-left:auto}
+.ttl-nav-sep{height:20px;width:1px;background:var(--ttl-rule);margin:0 4px}
+.ttl-prod{position:relative}
+.ttl-prod-panel{position:absolute;top:calc(100% + 8px);left:-12px;width:380px;padding:8px;border-radius:16px;background:var(--ttl-paper);border:1px solid var(--ttl-rule);box-shadow:0 30px 60px -30px rgba(16,41,45,.35);opacity:0;visibility:hidden;transform:translateY(-6px) scale(.98);transform-origin:20% 0;transition:opacity .25s,transform .35s cubic-bezier(.2,.8,.2,1),visibility .25s}
+.ttl-prod-panel::before{content:"";position:absolute;left:0;right:0;top:-12px;height:12px}
+.ttl-prod-panel[data-open]{opacity:1;visibility:visible;transform:none}
+.ttl-prod-item{display:flex;gap:12px;padding:12px;border-radius:10px;transition:background-color .2s}
+.ttl-prod-item:hover{background:var(--ttl-page)}
+.ttl-prod-item b{display:block;font-weight:500;font-size:14px}
+.ttl-prod-item small{display:block;font-size:12.5px;color:var(--ttl-muted);line-height:1.4}
+.ttl-prod-ic{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:var(--ttl-page);color:var(--ttl-gold);flex:none}
+.ttl-burger{display:none;width:40px;height:40px;place-items:center;border-radius:10px}
+.ttl-sheet{display:none}
+.ttl-progress{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--ttl-gold);transform:scaleX(0);transform-origin:0 50%;opacity:.9}
+
+/* hero */
+.ttl-hero{position:relative;padding:72px 0 0}
+.ttl-hero-glow{position:absolute;left:50%;top:260px;width:min(1100px,120vw);height:640px;transform:translateX(-50%);background:radial-gradient(closest-side,color-mix(in srgb,var(--ttl-lilac) 70%,transparent),transparent 72%);opacity:.65;pointer-events:none;z-index:-1}
+.ttl-hero-grid{position:absolute;inset:0 0 auto 0;height:560px;background-image:linear-gradient(var(--ttl-rule) 1px,transparent 1px),linear-gradient(90deg,var(--ttl-rule) 1px,transparent 1px);background-size:64px 64px;background-position:center -1px;-webkit-mask-image:radial-gradient(ellipse 60% 70% at 50% 0%,#000 30%,transparent 75%);mask-image:radial-gradient(ellipse 60% 70% at 50% 0%,#000 30%,transparent 75%);opacity:.55;pointer-events:none;z-index:-1}
+.ttl-hero-head{display:flex;flex-direction:column;align-items:center;text-align:center}
+.ttl-hero-text{max-width:620px;margin-top:22px;font-size:17px;color:var(--ttl-muted);line-height:1.6}
+.ttl-hero-ctas{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap;justify-content:center}
+.ttl-device-wrap{position:relative;max-width:1080px;margin:64px auto 0;padding:0 24px;perspective:1800px}
+.ttl-device{transform-origin:50% 100%;will-change:transform}
+.ttl-device-bezel{border-radius:22px;padding:10px;background:linear-gradient(160deg,#1b1f22,#0b0d0e);box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 50px 100px -40px rgba(16,41,45,.55),0 20px 40px -30px rgba(16,41,45,.4)}
+.ttl-floats{position:absolute;inset:0;z-index:3;pointer-events:none}
+.ttl-float{position:absolute;right:-28px;top:-36px}
+.ttl-float-2{right:auto;top:auto;left:-72px;bottom:26px}
+.ttl-float-2 .ttl-flow{width:320px}
+.ttl-float-in{will-change:transform}
+.ttl-flow{pointer-events:auto;width:340px;padding:12px 14px;border-radius:12px;background:var(--ttl-deep);color:var(--ttl-deep-ink);box-shadow:0 24px 50px -24px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.06);animation:ttl-flash .9s cubic-bezier(.2,.8,.2,1)}
+.ttl-flow-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;font-size:12px;color:var(--ttl-deep-muted);margin-bottom:10px}
+.ttl-flow-top b{color:var(--ttl-deep-ink);font-weight:600;font-variant-numeric:tabular-nums}
+.ttl-flow-top em{font-style:normal;color:var(--ttl-gold)}
+.ttl-flow-row{display:flex;align-items:center;gap:8px}
+.ttl-flow-chip{display:inline-flex;align-items:center;gap:6px;flex:0 1 auto;min-width:0;padding:7px 9px;border-radius:8px;background:rgba(255,255,255,.07);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ttl-flow-chip i{width:16px;height:16px;border-radius:5px;background:var(--ttl-gold);flex:none}
+.ttl-flow-chip-b i{background:var(--ttl-lilac)}
+.ttl-flow-arrow{color:var(--ttl-deep-muted)}
+.ttl-flow-arrow path{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round}
+.ttl-flow-arrow path:first-child{stroke-dasharray:3 4;animation:ttl-dash 1s linear infinite}
+@keyframes ttl-dash{to{stroke-dashoffset:-14}}
+@keyframes ttl-flash{from{box-shadow:0 0 0 2px var(--ttl-gold),0 24px 50px -24px rgba(0,0,0,.55)}}
+
+/* dashboard */
+.ttl-dash{display:grid;grid-template-columns:220px 1fr;height:620px;border-radius:13px;overflow:hidden;background:var(--ttl-paper);color:var(--ttl-ink);font-size:13px}
+.ttl-side{background:color-mix(in srgb,var(--ttl-page) 70%,var(--ttl-paper));border-right:1px solid var(--ttl-rule);padding:16px 10px;display:flex;flex-direction:column;gap:2px;overflow:hidden}
+.ttl-side-brand{display:flex;align-items:center;gap:8px;font-weight:600;font-size:12.5px;padding:2px 8px 14px}
+.ttl-side-label{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ttl-muted);padding:12px 8px 6px}
+.ttl-side-item,.ttl-side-acc{display:flex;align-items:center;gap:9px;width:100%;padding:7px 8px;border-radius:7px;text-align:left;color:var(--ttl-muted);transition:background-color .2s,color .2s}
+.ttl-side-item:hover,.ttl-side-acc:hover{background:color-mix(in srgb,var(--ttl-ink) 5%,transparent);color:var(--ttl-ink)}
+.ttl-side-item[data-on],.ttl-side-acc[data-on]{background:var(--ttl-paper);color:var(--ttl-ink);box-shadow:0 1px 2px rgba(16,41,45,.08),0 0 0 1px var(--ttl-rule)}
+.ttl-side-acc i{width:8px;height:8px;border-radius:3px;flex:none}
+.ttl-side-acc span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ttl-side-acc small{font-variant-numeric:tabular-nums;font-size:11.5px}
+.ttl-side-foot{margin-top:auto;display:flex;align-items:center;gap:9px;padding:7px 8px;color:var(--ttl-muted);font-size:12.5px}
+.ttl-main{position:relative;padding:18px 26px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.ttl-crumbs{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ttl-muted);padding-bottom:14px;border-bottom:1px solid var(--ttl-rule)}
+.ttl-crumbs b{color:var(--ttl-ink);font-weight:500}
+.ttl-live{margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--ttl-good) 10%,transparent);color:var(--ttl-good);font-size:11px}
+.ttl-live i{width:6px;height:6px;border-radius:50%;background:currentColor;animation:ttl-pulse 1.8s ease-in-out infinite}
+@keyframes ttl-pulse{50%{opacity:.25}}
+.ttl-tabs-sm{display:none}
+.ttl-view{padding-top:18px;flex:1;min-height:0;display:flex;flex-direction:column;animation:ttl-in .55s cubic-bezier(.2,.8,.2,1)}
+@keyframes ttl-in{from{opacity:0;transform:translateY(10px);filter:blur(4px)}}
+.ttl-ov-head{display:flex;justify-content:space-between;gap:24px;align-items:flex-start}
+.ttl-ov-head .ttl-k{margin-top:14px}
+.ttl-total{font-size:clamp(26px,3.4vw,38px);letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.15;margin-top:2px}
+.ttl-delta{font-size:12px;color:var(--ttl-muted);margin-top:4px}
+.ttl-delta span{color:var(--ttl-good);font-weight:500}
+.ttl-spark{display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex:1;max-width:320px}
+.ttl-spark-svg{width:100%;height:84px}
+.ttl-seg{display:inline-flex;padding:3px;border-radius:9px;background:var(--ttl-page);border:1px solid var(--ttl-rule)}
+.ttl-seg button{padding:4px 10px;border-radius:6px;font-size:11.5px;color:var(--ttl-muted);transition:background-color .25s,color .25s,box-shadow .25s}
+.ttl-seg button[aria-selected="true"]{background:var(--ttl-paper);color:var(--ttl-ink);box-shadow:0 1px 2px rgba(16,41,45,.12)}
+.ttl-accs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
+.ttl-acc{display:flex;flex-direction:column;gap:3px;text-align:left;padding:12px;border-radius:10px;border:1px solid var(--ttl-rule);background:var(--ttl-paper);transition:border-color .25s,transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s,opacity .3s;cursor:pointer}
+.ttl-acc:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--ttl-ink) 25%,transparent);box-shadow:0 14px 26px -18px rgba(16,41,45,.4)}
+.ttl-acc[data-on]{border-color:var(--ttl-gold);box-shadow:0 0 0 3px color-mix(in srgb,var(--ttl-gold) 18%,transparent)}
+.ttl-acc[data-dim]{opacity:.5}
+.ttl-acc-top{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ttl-muted)}
+.ttl-acc-top i{width:8px;height:8px;border-radius:3px}
+.ttl-acc-go{margin-left:auto;opacity:0;transform:translateX(-4px);transition:opacity .25s,transform .25s}
+.ttl-acc:hover .ttl-acc-go{opacity:1;transform:none}
+.ttl-acc-bal{font-size:15px;font-variant-numeric:tabular-nums;letter-spacing:-.01em;font-weight:500}
+.ttl-acc-kind{font-size:11px;color:var(--ttl-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ttl-recent{margin-top:16px;display:flex;flex-direction:column}
+.ttl-recent-head{display:flex;justify-content:space-between;align-items:center;padding-bottom:6px;font-size:12.5px}
+.ttl-recent-head b{font-weight:500}
+.ttl-recent-row{display:grid;grid-template-columns:68px 1fr auto;gap:12px;align-items:center;padding:7px 0;border-top:1px solid var(--ttl-rule);font-size:12px;animation:ttl-in .45s cubic-bezier(.2,.8,.2,1) both}
+.ttl-recent-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ttl-break{margin-top:auto;padding-top:16px}
+.ttl-break-head{display:flex;flex-direction:column;gap:2px;margin-bottom:10px}
+.ttl-break-head b{font-weight:500;font-size:13px}
+.ttl-break-head span{font-size:11.5px;color:var(--ttl-muted)}
+.ttl-bar{position:relative;display:flex;gap:3px;height:12px}
+.ttl-bar span{display:block;height:100%;border-radius:3px;min-width:3px;transition:opacity .3s,transform .3s;outline-offset:2px}
+.ttl-bar span:hover,.ttl-bar span:focus-visible{transform:scaleY(1.35)}
+.ttl-bar span[data-dim]{opacity:.3}
+.ttl-bar-lg{height:16px}
+.ttl-tip{position:absolute;bottom:calc(100% + 8px);transform:translateX(-50%);padding:5px 9px;border-radius:7px;background:var(--ttl-ink);color:var(--ttl-paper);font-size:11px;font-style:normal;white-space:nowrap;pointer-events:none;animation:ttl-in .25s}
+.ttl-legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:11.5px;color:var(--ttl-muted)}
+.ttl-legend span{display:inline-flex;align-items:center;gap:6px}
+.ttl-legend i{width:8px;height:8px;border-radius:3px}
+
+.ttl-move .ttl-h3,.ttl-act .ttl-h3{margin-bottom:14px}
+.ttl-form{display:flex;flex-direction:column;gap:12px;max-width:560px}
+.ttl-pick{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+.ttl-pick-col{display:flex;flex-direction:column;gap:6px}
+.ttl-pill{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:8px;border:1px solid var(--ttl-rule);font-size:12.5px;transition:border-color .2s,background-color .2s,box-shadow .2s;cursor:pointer}
+.ttl-pill small{color:var(--ttl-muted);font-variant-numeric:tabular-nums}
+.ttl-pill[aria-pressed="true"]{border-color:var(--ttl-ink);background:color-mix(in srgb,var(--ttl-gold) 8%,var(--ttl-paper));box-shadow:0 0 0 1px var(--ttl-ink) inset}
+.ttl-swap-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;border:1px solid var(--ttl-rule);color:var(--ttl-gold)}
+.ttl-field{display:flex;flex-direction:column;gap:6px}
+.ttl-explain-area{border:1px solid var(--ttl-rule);border-radius:8px;padding:10px;font-size:13px;line-height:1.45;background:var(--ttl-paper);outline:0;resize:none}
+.ttl-explain-area:focus{border-color:var(--ttl-ink)}
+.ttl-chips{display:flex;gap:6px;flex-wrap:wrap}
+.ttl-chips button{padding:5px 10px;border-radius:999px;background:var(--ttl-page);font-size:12px;border:1px solid var(--ttl-rule);transition:background-color .2s;cursor:pointer}
+.ttl-chips button:hover{background:var(--ttl-paper)}
+.ttl-memo{border:1px solid var(--ttl-rule);border-radius:8px;padding:8px 10px;font-size:12.5px;background:var(--ttl-paper);outline:0}
+.ttl-memo:focus{border-color:var(--ttl-ink)}
+.ttl-form .ttl-btn{align-self:flex-start;height:40px}
+.ttl-err{font-size:12.5px;color:#b3412e}
+.ttl-review{display:flex;flex-direction:column;gap:14px;max-width:480px;animation:ttl-in .5s cubic-bezier(.2,.8,.2,1)}
+.ttl-route{display:flex;align-items:center;gap:12px;font-size:13px}
+.ttl-route span{padding:6px 10px;border-radius:8px;background:var(--ttl-page);border:1px solid var(--ttl-rule)}
+.ttl-route-line{color:var(--ttl-gold)}
+.ttl-route-line path{stroke-dasharray:4 4;animation:ttl-dash .8s linear infinite}
+.ttl-review-amt{font-size:28px;letter-spacing:-.03em;font-weight:500}
+.ttl-dl{display:flex;flex-direction:column;border-top:1px solid var(--ttl-rule)}
+.ttl-dl div{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--ttl-rule);font-size:12.5px}
+.ttl-dl dt{color:var(--ttl-muted)}
+.ttl-dl dd{font-variant-numeric:tabular-nums;font-weight:500}
+.ttl-row{display:flex;gap:8px}
+.ttl-row .ttl-btn{height:40px}
+.ttl-done{display:flex;align-items:center;flex-wrap:wrap;gap:10px;font-weight:500}
+.ttl-done-ic{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--ttl-good);color:#fff;animation:ttl-pop .5s cubic-bezier(.3,1.6,.5,1)}
+@keyframes ttl-pop{from{transform:scale(.3);opacity:0}}
+.ttl-act{display:flex;flex-direction:column;min-height:0;flex:1}
+.ttl-act-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.ttl-ledger{overflow:auto;flex:1;min-height:0;border-top:1px solid var(--ttl-rule);scrollbar-width:thin}
+.ttl-ledger li{display:grid;grid-template-columns:64px 1fr auto 110px;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px solid var(--ttl-rule);animation:ttl-in .45s cubic-bezier(.2,.8,.2,1) both}
+.ttl-led-date{color:var(--ttl-muted);font-size:12px}
+.ttl-led-text{display:flex;flex-direction:column;min-width:0}
+.ttl-led-text small{color:var(--ttl-muted);font-size:11px}
+.ttl-led-status{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--ttl-page);color:var(--ttl-muted)}
+.ttl-led-status[data-s="Verified"]{background:color-mix(in srgb,var(--ttl-good) 10%,transparent);color:var(--ttl-good)}
+.ttl-led-status[data-s="Consolidated"]{background:color-mix(in srgb,var(--ttl-gold) 14%,transparent);color:var(--ttl-gold)}
+.ttl-led-amt{text-align:right;font-variant-numeric:tabular-nums;font-weight:500}
+.ttl-led-amt[data-in]{color:var(--ttl-good)}
+.ttl-led-empty{display:block!important;color:var(--ttl-muted);padding:20px 2px}
+
+/* sections */
+.ttl-sec{position:relative;padding:120px 0}
+.ttl-split{display:grid;grid-template-columns:220px 1fr;gap:40px}
+.ttl-label{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ttl-gold);height:max-content;padding-top:8px}
+.ttl-label::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 0 0 currentColor;animation:ttl-ping 2.4s ease-out infinite}
+@keyframes ttl-ping{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ttl-gold) 50%,transparent)}80%,100%{box-shadow:0 0 0 8px transparent}}
+.ttl-benefits{border-bottom:1px solid var(--ttl-rule)}
+.ttl-benefits-text{font-size:clamp(22px,2.7vw,32px);line-height:1.35;letter-spacing:-.02em;max-width:840px}
+.ttl-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:80px;max-width:840px}
+.ttl-stat{position:relative;display:flex;flex-direction:column;gap:6px;padding-top:18px}
+.ttl-stat-rule{position:absolute;top:0;left:0;right:0;height:1px;background:var(--ttl-ink);opacity:.25;transform-origin:0 50%}
+.ttl-stat b{font-size:clamp(40px,5vw,60px);font-weight:400;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
+.ttl-stat span:last-child{font-size:12.5px;color:var(--ttl-muted)}
+
+/* features */
+.ttl-feats{background:color-mix(in srgb,var(--ttl-page) 60%,var(--ttl-rule))}
+.ttl-feat-label{margin-bottom:24px}
+.ttl-feat-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:80px}
+.ttl-stage-col{position:relative}
+.ttl-stage{position:sticky;top:calc(50vh - 260px);height:520px;border-radius:14px;overflow:hidden;background:var(--ttl-paper);box-shadow:0 1px 0 var(--ttl-rule),0 40px 80px -50px rgba(16,41,45,.35);transition:background-color .7s}
+.ttl-stage[data-scene="1"]{background:var(--ttl-deep)}
+.ttl-stage-layer{position:absolute;inset:0;opacity:0;visibility:hidden;transform:translateY(24px) scale(.97);filter:blur(6px);transition:opacity .6s,transform .8s cubic-bezier(.2,.8,.2,1),filter .6s,visibility .6s}
+.ttl-stage-layer[data-on]{opacity:1;visibility:visible;transform:none;filter:none}
+.ttl-stage-count{position:absolute;left:18px;bottom:14px;font-size:11.5px;letter-spacing:.06em;color:var(--ttl-muted);font-variant-numeric:tabular-nums;transition:color .6s}
+.ttl-stage[data-scene="1"] .ttl-stage-count{color:var(--ttl-deep-muted)}
+.ttl-stage-count b{color:var(--ttl-gold);font-weight:500}
+.ttl-feat-copy{display:flex;flex-direction:column}
+.ttl-feat{min-height:72vh;display:flex;flex-direction:column;justify-content:center;gap:12px;opacity:.35;transition:opacity .5s}
+.ttl-feat[data-on]{opacity:1}
+.ttl-feat-n{font-size:12px;color:var(--ttl-gold);letter-spacing:.08em}
+.ttl-feat-title{font-size:clamp(22px,2.4vw,28px);letter-spacing:-.02em;font-weight:400}
+.ttl-feat p{color:var(--ttl-muted);max-width:440px;line-height:1.6}
+.ttl-feat-inline{display:none}
+.ttl-scene{position:absolute;inset:0;display:grid;place-items:center;padding:28px}
+
+.ttl-setup-card{position:relative;width:min(420px,100%);padding:18px;border-radius:14px;background:var(--ttl-paper);border:1px solid var(--ttl-rule);box-shadow:0 24px 50px -30px rgba(16,41,45,.35)}
+.ttl-setup-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.ttl-setup-head span{display:flex;flex-direction:column}
+.ttl-setup-head b{font-weight:500;font-size:14px}
+.ttl-setup-head small{font-size:11.5px;color:var(--ttl-muted)}
+.ttl-setup-list{display:flex;flex-direction:column;gap:6px}
+.ttl-setup-list button{display:flex;align-items:center;gap:10px;width:100%;padding:10px;border-radius:10px;border:1px solid var(--ttl-rule);font-size:13px;text-align:left;transition:border-color .35s,background-color .35s;cursor:pointer}
+.ttl-setup-list button[data-on]{border-color:color-mix(in srgb,var(--ttl-good) 35%,transparent);background:color-mix(in srgb,var(--ttl-good) 5%,var(--ttl-paper))}
+.ttl-setup-ic{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--ttl-page);color:var(--ttl-gold);flex:none}
+.ttl-tick{margin-left:auto;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--ttl-rule);color:transparent;transition:background-color .3s,border-color .3s,color .3s,transform .45s cubic-bezier(.3,1.6,.5,1)}
+.ttl-setup-list button[data-on] .ttl-tick{background:var(--ttl-good);border-color:var(--ttl-good);color:#fff;transform:scale(1.08)}
+.ttl-setup-list button[data-last]{border-style:dashed}
+.ttl-setup-foot{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:11.5px;color:var(--ttl-muted);font-variant-numeric:tabular-nums}
+.ttl-meter{flex:1;height:4px;border-radius:2px;background:var(--ttl-page);overflow:hidden}
+.ttl-meter i{display:block;height:100%;background:var(--ttl-good);border-radius:2px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.ttl-cursor{position:absolute;right:-30px;top:42%;transition:transform 1.1s cubic-bezier(.6,0,.2,1);pointer-events:none;filter:drop-shadow(0 4px 6px rgba(0,0,0,.2))}
+.ttl-cursor[data-at]{transform:translate(-80px,82px)}
+.ttl-cursor[data-click]{animation:ttl-click .35s .1s}
+@keyframes ttl-click{50%{scale:.8}}
+
+.ttl-scene-phone{overflow:hidden;color:var(--ttl-deep-ink)}
+.ttl-bokeh{position:absolute;inset:-20%;background:radial-gradient(circle at 18% 30%,color-mix(in srgb,var(--ttl-gold) 55%,transparent) 0,transparent 18%),radial-gradient(circle at 82% 22%,color-mix(in srgb,var(--ttl-lilac) 40%,transparent) 0,transparent 14%),radial-gradient(circle at 70% 80%,color-mix(in srgb,var(--ttl-gold) 30%,transparent) 0,transparent 20%),radial-gradient(circle at 30% 85%,rgba(255,255,255,.12) 0,transparent 10%);filter:blur(18px);animation:ttl-drift 14s ease-in-out infinite alternate}
+@keyframes ttl-drift{to{transform:translate(4%,-3%) scale(1.06)}}
+.ttl-phone{position:relative;width:220px;height:430px;padding:9px;border-radius:38px;background:linear-gradient(150deg,#2b3134,#0c0e0f 60%);box-shadow:0 0 0 1px rgba(255,255,255,.08) inset,0 40px 70px -20px rgba(0,0,0,.65);transform:perspective(1100px) rotateY(-14deg) rotateX(6deg) rotateZ(4deg);transition:transform 1s cubic-bezier(.2,.8,.2,1)}
+.ttl-stage-layer[data-on] .ttl-phone,.ttl-feat[data-on] .ttl-phone{transform:perspective(1100px) rotateY(-8deg) rotateX(4deg) rotateZ(2deg)}
+.ttl-phone-screen{position:relative;height:100%;border-radius:30px;overflow:hidden;background:linear-gradient(180deg,color-mix(in srgb,var(--ttl-deep) 80%,#000),var(--ttl-deep));padding:16px 14px;display:flex;flex-direction:column;gap:8px}
+.ttl-phone-status{display:flex;justify-content:space-between;align-items:center;font-size:10px;opacity:.8;margin-bottom:6px}
+.ttl-phone-status i{width:46px;height:14px;border-radius:999px;background:#000;position:absolute;left:50%;top:10px;transform:translateX(-50%)}
+.ttl-phone-k{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ttl-deep-muted);margin-top:8px}
+.ttl-phone-bal{font-size:26px;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.ttl-phone-chart{width:100%;height:48px}
+.ttl-phone-card{display:flex;flex-direction:column;padding:10px;border-radius:12px;background:rgba(255,255,255,.07);font-size:10.5px;color:var(--ttl-deep-muted)}
+.ttl-phone-card b{font-size:12px;color:var(--ttl-deep-ink);font-weight:400;margin-top:4px;line-height:1.4}
+.ttl-phone-btn{margin-top:auto;padding:11px;border-radius:12px;background:var(--ttl-gold);color:#fff;font-size:12px;font-weight:500;transition:transform .2s,filter .2s;cursor:pointer}
+.ttl-phone-btn:hover{filter:brightness(1.08)}
+.ttl-phone-btn:active{transform:scale(.97)}
+.ttl-phone-sheet{position:absolute;left:6px;right:6px;bottom:6px;padding:10px 14px 16px;border-radius:24px;background:var(--ttl-paper);color:var(--ttl-ink);display:flex;flex-direction:column;gap:10px;transform:translateY(110%);transition:transform .55s cubic-bezier(.2,.9,.2,1);box-shadow:0 -10px 30px rgba(0,0,0,.3)}
+.ttl-phone-sheet[data-open]{transform:none}
+.ttl-phone-grip{width:34px;height:4px;border-radius:2px;background:var(--ttl-rule);margin:0 auto 4px}
+.ttl-phone-sheet b{font-size:12.5px;font-weight:500}
+.ttl-phone-amt{font-size:14px;letter-spacing:-.01em;font-weight:600;color:var(--ttl-gold)}
+.ttl-phone-sheet button{padding:10px;border-radius:12px;background:var(--ttl-accent);color:var(--ttl-accent-ink);font-size:12px;cursor:pointer}
+.ttl-phone-sent{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:4px 0}
+.ttl-phone-sent small{font-size:11px;color:var(--ttl-muted)}
+.ttl-phone-sent button{align-self:stretch;margin-top:6px}
+.ttl-chipfloat{position:absolute;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-size:11.5px;color:var(--ttl-deep-ink);animation:ttl-bob 5s ease-in-out infinite;z-index:2}
+.ttl-chipfloat svg{color:var(--ttl-gold)}
+.ttl-chipfloat-a{left:6%;top:12%}
+.ttl-chipfloat-b{right:6%;bottom:16%;animation-delay:-2.5s}
+@keyframes ttl-bob{50%{transform:translateY(-8px)}}
+
+.ttl-range{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--ttl-gold) var(--ttl-fill,50%),var(--ttl-rule) var(--ttl-fill,50%));outline-offset:6px;cursor:pointer}
+.ttl-range::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--ttl-paper);border:2px solid var(--ttl-gold);box-shadow:0 2px 6px rgba(0,0,0,.2);transition:transform .2s}
+.ttl-range::-webkit-slider-thumb:hover{transform:scale(1.15)}
+.ttl-range::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--ttl-paper);border:2px solid var(--ttl-gold)}
+.ttl-range-lg{height:6px;border-radius:3px}
+
+.ttl-rep-card{position:relative;width:min(440px,100%);padding:18px;border-radius:14px;background:var(--ttl-paper);border:1px solid var(--ttl-rule);box-shadow:0 30px 60px -36px rgba(16,41,45,.4);z-index:1}
+.ttl-rep-back{position:absolute;width:min(440px,80%);height:280px;transform:translate(46px,-34px) rotate(3deg);opacity:.6;z-index:0;box-shadow:none}
+.ttl-stage-layer[data-on] .ttl-rep-back{animation:ttl-fan .9s .1s cubic-bezier(.2,.8,.2,1) both}
+@keyframes ttl-fan{from{transform:translate(0,0) rotate(0)}}
+.ttl-rep-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.ttl-rep-head b{font-weight:500}
+.ttl-rep-total{font-size:28px;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin:2px 0 14px}
+.ttl-rep-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.ttl-rep-row div{display:flex;flex-direction:column;gap:2px;padding:8px;border-radius:8px;border:1px solid var(--ttl-rule);font-size:11px;color:var(--ttl-muted)}
+.ttl-rep-row span{display:inline-flex;align-items:center;gap:5px}
+.ttl-rep-row b{color:var(--ttl-ink);font-size:13px;font-weight:500;font-variant-numeric:tabular-nums}
+
+/* coverage */
+.ttl-cov{border-top:1px solid var(--ttl-rule)}
+.ttl-cov-title{max-width:820px}
+.ttl-cov-items{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:56px;border-top:1px solid var(--ttl-rule)}
+.ttl-cov-item{display:flex;flex-direction:column;gap:2px;padding:22px 20px 22px 0;font-size:13px}
+.ttl-cov-item + .ttl-cov-item{padding-left:20px;border-left:1px solid var(--ttl-rule)}
+.ttl-cov-item b{font-weight:500;margin-top:14px}
+.ttl-cov-item small{color:var(--ttl-muted);font-size:12.5px}
+.ttl-cov-ic{display:grid;place-items:center;width:40px;height:40px;border-radius:10px;border:1px solid var(--ttl-rule);color:var(--ttl-gold);background:var(--ttl-paper)}
+.ttl-cov-calc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:48px;margin-top:48px;padding:32px;border-radius:16px;background:var(--ttl-paper);border:1px solid var(--ttl-rule)}
+.ttl-cov-ctl{display:flex;flex-direction:column;gap:12px}
+.ttl-cov-dep{font-size:clamp(36px,4.6vw,52px);letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
+.ttl-cov-scale{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ttl-muted)}
+.ttl-cov-out{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.ttl-cov-out div{padding:12px;border-radius:10px;background:var(--ttl-page)}
+.ttl-cov-out dt{font-size:11px;color:var(--ttl-muted)}
+.ttl-cov-out dd{font-size:20px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.ttl-cov-out div[data-over] dd{color:var(--ttl-gold)}
+.ttl-dots-wrap{display:flex;flex-direction:column;justify-content:center;gap:14px}
+.ttl-dots{display:grid;grid-template-columns:repeat(50,1fr);gap:4px;align-content:center}
+.ttl-dots i{display:block;aspect-ratio:1;border-radius:50%;background:var(--ttl-page);border:1px solid var(--ttl-rule);transition:background-color .35s,border-color .35s,transform .35s}
+.ttl-dots i[data-on]{background:var(--ttl-accent);border-color:var(--ttl-accent);transform:scale(.86)}
+
+/* pricing / architecture */
+.ttl-price{background:var(--ttl-deep);color:var(--ttl-deep-ink);overflow:hidden}
+.ttl-price .ttl-label{color:var(--ttl-gold)}
+.ttl-price-glow{position:absolute;right:-20%;top:-30%;width:900px;height:900px;border-radius:50%;background:radial-gradient(closest-side,color-mix(in srgb,var(--ttl-gold) 22%,transparent),transparent);pointer-events:none;animation:ttl-drift 16s ease-in-out infinite alternate}
+.ttl-price-big{font-size:clamp(44px,6vw,76px);font-weight:400;letter-spacing:-.045em;line-height:1;color:var(--ttl-deep-muted)}
+.ttl-price-big span{color:var(--ttl-deep-ink)}
+.ttl-price-intro{margin-top:56px;font-size:13px;color:var(--ttl-deep-muted)}
+.ttl-price-list{margin-top:16px;border-top:1px solid rgba(255,255,255,.12);max-width:820px}
+.ttl-price-list > li{display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.12);font-size:14.5px}
+.ttl-price-check{color:var(--ttl-gold);fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.ttl-price-check path{stroke-dasharray:26}
+.ttl-plus{display:grid;place-items:center;flex:none;transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+.ttl-plus[data-open]{transform:rotate(135deg)}
+.ttl-price .ttl-plus{color:var(--ttl-gold)}
+.ttl-collapse{display:grid;grid-template-rows:0fr;transition:grid-template-rows .5s cubic-bezier(.2,.8,.2,1)}
+.ttl-collapse[data-open]{grid-template-rows:1fr}
+.ttl-collapse > div{overflow:hidden;min-height:0}
+.ttl-compare{margin-top:40px;max-width:820px;padding:22px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}
+.ttl-compare-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;font-size:13px;color:var(--ttl-deep-muted)}
+.ttl-step{display:inline-flex;align-items:center;border:1px solid rgba(255,255,255,.18);border-radius:999px}
+.ttl-step button{width:32px;height:30px;font-size:16px;color:var(--ttl-deep-ink);cursor:pointer}
+.ttl-step output{min-width:28px;text-align:center;color:var(--ttl-deep-ink);font-variant-numeric:tabular-nums}
+.ttl-cbar{display:grid;grid-template-columns:160px 1fr 140px;align-items:center;gap:14px;padding:6px 0;font-size:12.5px;color:var(--ttl-deep-muted)}
+.ttl-cbar i{display:block;height:10px;border-radius:5px;background:rgba(255,255,255,.22)}
+.ttl-cbar b{text-align:right;font-weight:400;color:var(--ttl-deep-ink);font-variant-numeric:tabular-nums}
+.ttl-cbar-us i{background:var(--ttl-gold)}
+.ttl-price .ttl-fine{color:var(--ttl-deep-muted);margin-top:10px}
+
+/* faq */
+.ttl-faq-title{margin-bottom:48px}
+.ttl-faq-list{border-top:1px solid var(--ttl-rule);max-width:860px}
+.ttl-faq-list li{border-bottom:1px solid var(--ttl-rule)}
+.ttl-faq-list button{display:flex;justify-content:space-between;align-items:center;gap:20px;width:100%;padding:18px 0;text-align:left;font-size:15px;transition:color .2s;cursor:pointer}
+.ttl-faq-list button:hover{color:var(--ttl-gold)}
+.ttl-faq-list p{padding:0 48px 20px 0;color:var(--ttl-muted);max-width:700px;line-height:1.6}
+.ttl-faq-more{margin-top:20px}
+.ttl-faq-more a{text-decoration:underline;text-underline-offset:3px;color:var(--ttl-ink)}
+
+/* cta */
+.ttl-cta-sec{padding-top:40px;padding-bottom:40px}
+.ttl-cta{position:relative;overflow:hidden;border-radius:10px;min-height:360px;display:flex;align-items:center;background:linear-gradient(120deg,var(--ttl-glow-a),var(--ttl-glow-b) 55%,var(--ttl-glow-c));transform-origin:50% 100%}
+.ttl-blob{position:absolute;border-radius:50%;filter:blur(50px);pointer-events:none;will-change:transform}
+.ttl-blob-a{width:520px;height:520px;left:-120px;top:-180px;background:var(--ttl-glow-a)}
+.ttl-blob-b{width:460px;height:460px;right:-80px;bottom:-200px;background:var(--ttl-glow-b)}
+.ttl-blob-c{width:300px;height:300px;right:28%;top:-90px;background:rgba(255,255,255,.55)}
+.ttl-grain{position:absolute;inset:0;opacity:.35;mix-blend-mode:soft-light;background-image:repeating-radial-gradient(circle at 17% 32%,rgba(0,0,0,.18) 0 1px,transparent 1px 3px),repeating-radial-gradient(circle at 73% 61%,rgba(255,255,255,.3) 0 1px,transparent 1px 4px);pointer-events:none}
+.ttl-cta-in{position:relative;padding:48px;max-width:640px;display:flex;flex-direction:column;gap:16px}
+.ttl-cta-in > p{color:color-mix(in srgb,var(--ttl-ink) 75%,transparent);max-width:460px;line-height:1.6}
+.ttl-cta-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.ttl-morph{position:relative;display:flex;align-items:center;height:48px;width:156px;border-radius:999px;background:var(--ttl-accent);color:var(--ttl-accent-ink);transition:width .6s cubic-bezier(.7,0,.2,1),background-color .45s,box-shadow .3s;overflow:hidden}
+.ttl-morph[data-open]{width:min(380px,calc(100vw - 96px));background:var(--ttl-paper);box-shadow:0 0 0 1px var(--ttl-rule),0 16px 32px -20px rgba(16,41,45,.5)}
+.ttl-morph[data-bad]{box-shadow:0 0 0 2px #b3412e;animation:ttl-shake .4s}
+@keyframes ttl-shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.ttl-morph input{position:absolute;left:0;top:0;bottom:0;width:calc(100% - 52px);padding:0 0 0 20px;border:0;outline:0;background:none;color:var(--ttl-ink);font-size:14px;opacity:0;pointer-events:none;transition:opacity .3s}
+.ttl-morph[data-open] input{opacity:1;pointer-events:auto;transition-delay:.3s}
+.ttl-morph button{position:absolute;right:0;top:0;bottom:0;left:0;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:500;transition:left .6s cubic-bezier(.7,0,.2,1);cursor:pointer}
+.ttl-morph[data-open] button{left:calc(100% - 46px);right:4px;top:4px;bottom:4px;border-radius:50%;background:var(--ttl-accent);color:var(--ttl-accent-ink)}
+.ttl-morph-label{transition:opacity .2s}
+.ttl-morph[data-open] .ttl-morph-label{opacity:0;position:absolute;pointer-events:none}
+.ttl-morph-go{display:grid;place-items:center}
+.ttl-morph:not([data-open]) .ttl-morph-go{display:none}
+.ttl-spin{width:16px;height:16px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:ttl-rot .7s linear infinite}
+@keyframes ttl-rot{to{transform:rotate(360deg)}}
+.ttl-cta-done{display:flex;align-items:center;gap:10px;font-weight:500;margin-top:12px}
+.ttl-btn-glass{height:48px}
+
+.ttl-op-sec{padding-top:40px;padding-bottom:120px}
+.ttl-op{position:relative;display:grid;grid-template-columns:1fr 340px;align-items:center;gap:40px;min-height:340px;padding:48px;border-radius:10px;background:var(--ttl-deep);color:var(--ttl-deep-ink);overflow:hidden}
+.ttl-op .ttl-h2{font-size:clamp(26px,3.2vw,36px)}
+.ttl-op-copy{display:flex;flex-direction:column;gap:16px;max-width:500px}
+.ttl-op-copy p{color:var(--ttl-deep-muted);line-height:1.6}
+.ttl-link-arrow{display:inline-flex;align-items:center;gap:8px;font-size:14px;text-decoration:underline;text-underline-offset:4px;text-decoration-color:color-mix(in srgb,var(--ttl-deep-ink) 35%,transparent);cursor:pointer}
+.ttl-link-arrow svg{transition:transform .3s}
+.ttl-link-arrow:hover svg{transform:translateX(4px)}
+.ttl-op-art{display:grid;place-items:center}
+.ttl-dial{width:300px;height:300px}
+
+/* resources */
+.ttl-res{padding-top:40px}
+.ttl-res-title{font-size:clamp(24px,2.8vw,34px);max-width:780px;margin-bottom:40px}
+.ttl-res-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.ttl-res-card{display:flex;flex-direction:column;border-radius:10px;overflow:hidden;background:var(--ttl-deep);color:var(--ttl-deep-ink);transition:translate .45s cubic-bezier(.2,.8,.2,1),box-shadow .45s;cursor:pointer}
+.ttl-res-card:hover{translate:0 -6px;box-shadow:0 30px 50px -30px rgba(16,41,45,.6)}
+.ttl-res-thumb{height:170px;overflow:hidden;background:var(--ttl-paper);position:relative}
+.ttl-res-cap{display:flex;flex-direction:column;justify-content:space-between;gap:28px;padding:16px;flex:1}
+.ttl-res-cap b{font-weight:400;font-size:14px;line-height:1.35}
+.ttl-res-cap span{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ttl-deep-muted)}
+.ttl-res-cap span svg{transition:transform .3s}
+.ttl-res-card:hover .ttl-res-cap span svg{transform:translateX(4px);color:var(--ttl-gold)}
+
+/* footer */
+.ttl-foot{position:relative;padding:80px 0 0;border-top:1px solid var(--ttl-rule);overflow:hidden}
+.ttl-foot-grid{display:grid;grid-template-columns:1.3fr repeat(5,1fr);gap:24px;align-items:start}
+.ttl-foot-col{display:flex;flex-direction:column;gap:8px;font-size:13px}
+.ttl-foot-col b{font-weight:500;margin-bottom:6px}
+.ttl-foot-col a{color:var(--ttl-muted);transition:color .2s;width:max-content}
+.ttl-foot-col a:hover{color:var(--ttl-ink)}
+.ttl-foot-bar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-top:64px;padding:18px 0;border-top:1px solid var(--ttl-rule);border-bottom:1px solid var(--ttl-rule);font-size:12px;color:var(--ttl-muted)}
+.ttl-foot-legal-links{display:flex;flex-wrap:wrap;gap:16px}
+.ttl-foot-legal-links a:hover{color:var(--ttl-ink)}
+.ttl-social{display:flex;gap:8px}
+.ttl-social a{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;border:1px solid var(--ttl-rule);color:var(--ttl-ink);transition:background-color .2s,color .2s}
+.ttl-social a:hover{background:var(--ttl-ink);color:var(--ttl-page)}
+.ttl-legal{font-size:11px;line-height:1.6;color:var(--ttl-muted);margin-top:18px;max-width:980px}
+.ttl-bigmark{display:flex;justify-content:center;margin-top:40px;font-size:clamp(60px,16vw,240px);line-height:.78;letter-spacing:-.06em;font-weight:500;color:transparent;-webkit-text-stroke:1px color-mix(in srgb,var(--ttl-ink) 22%,transparent);overflow:hidden;padding-top:.06em;user-select:none}
+.ttl-bigmark span{display:inline-block;background:linear-gradient(180deg,color-mix(in srgb,var(--ttl-gold) 30%,transparent),transparent 85%);-webkit-background-clip:text;background-clip:text}
+
+/* narrow */
+@media (max-width:1080px){
+.ttl-float{right:-8px}
+.ttl-float-2{left:-8px}
+.ttl-foot-grid{grid-template-columns:repeat(3,1fr)}
+.ttl-foot-grid > .ttl-brand{grid-column:1 / -1}
+}
+@media (max-width:900px){
+.ttl-nav-links{display:none}
+.ttl-burger{display:grid}
+.ttl-hide-sm{display:none}
+.ttl-sheet{display:flex;flex-direction:column;position:absolute;left:12px;right:12px;top:calc(100% + 4px);padding:8px;border-radius:16px;background:var(--ttl-paper);border:1px solid var(--ttl-rule);box-shadow:0 30px 60px -30px rgba(16,41,45,.4);opacity:0;visibility:hidden;transform:translateY(-8px);transition:opacity .25s,transform .35s cubic-bezier(.2,.8,.2,1),visibility .25s}
+.ttl-sheet[data-open]{opacity:1;visibility:visible;transform:none}
+.ttl-sheet a{display:flex;justify-content:space-between;align-items:center;padding:14px 12px;border-radius:10px;font-size:15px}
+.ttl-sheet a:hover{background:var(--ttl-page)}
+.ttl-split{grid-template-columns:1fr;gap:20px}
+.ttl-sec{padding:84px 0}
+.ttl-floats{position:relative;inset:auto;display:flex;justify-content:center;flex-wrap:wrap;margin-top:18px;gap:10px}
+.ttl-float,.ttl-float-2{position:relative;inset:auto}
+.ttl-feat-grid{grid-template-columns:1fr;gap:0}
+.ttl-stage-col{display:none}
+.ttl-feat{min-height:0;opacity:1;padding:24px 0 48px}
+.ttl-feat-inline{display:block;position:relative;height:420px;border-radius:14px;overflow:hidden;background:var(--ttl-paper);margin-bottom:12px}
+.ttl-feat[data-feat="1"] .ttl-feat-inline{background:var(--ttl-deep)}
+.ttl-cov-items{grid-template-columns:repeat(2,1fr)}
+.ttl-cov-item:nth-child(3){padding-left:0;border-left:0}
+.ttl-cov-calc{grid-template-columns:1fr;gap:28px;padding:22px}
+.ttl-op{grid-template-columns:1fr;padding:32px}
+.ttl-op-art{order:-1}
+.ttl-res-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:720px){
+.ttl-dash{grid-template-columns:1fr;height:auto;min-height:540px}
+.ttl-side{display:none}
+.ttl-main{padding:14px}
+.ttl-tabs-sm{display:flex;gap:4px;margin-top:12px;padding:3px;border-radius:999px;background:var(--ttl-page);border:1px solid var(--ttl-rule)}
+.ttl-tabs-sm button{flex:1;padding:6px 4px;border-radius:999px;font-size:12px;color:var(--ttl-muted)}
+.ttl-tabs-sm button[aria-selected="true"]{background:var(--ttl-paper);color:var(--ttl-ink);box-shadow:0 1px 2px rgba(16,41,45,.12)}
+.ttl-ov-head{flex-direction:column;gap:12px}
+.ttl-spark{max-width:none;width:100%;align-items:stretch}
+.ttl-spark .ttl-seg{align-self:flex-start}
+.ttl-accs{grid-template-columns:1fr}
+.ttl-acc{flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px 12px}
+.ttl-acc-top{flex:1}
+.ttl-acc-kind{width:100%}
+.ttl-pick{grid-template-columns:1fr}
+.ttl-swap-icon{margin:0 auto;transform:rotate(90deg)}
+.ttl-ledger li{grid-template-columns:52px 1fr auto;font-size:12px}
+.ttl-led-status{display:none}
+.ttl-stats{grid-template-columns:1fr;gap:28px;margin-top:56px}
+.ttl-cov-items{grid-template-columns:1fr}
+.ttl-cov-item + .ttl-cov-item{padding-left:0;border-left:0;border-top:1px solid var(--ttl-rule)}
+.ttl-cov-out{grid-template-columns:1fr 1fr}
+.ttl-dots{grid-template-columns:repeat(25,1fr);gap:3px}
+.ttl-cta-in{padding:28px}
+.ttl-op{padding:24px}
+.ttl-dial{width:240px;height:240px}
+.ttl-res-grid{grid-template-columns:1fr}
+.ttl-cbar{grid-template-columns:110px 1fr 90px;gap:8px}
+.ttl-foot-grid{grid-template-columns:1fr 1fr}
+.ttl-foot-bar{flex-direction:column;align-items:flex-start}
+.ttl-flow{width:min(300px,calc(100vw - 48px))}
+.ttl-device-wrap{padding:0 12px;margin-top:44px}
+.ttl-device-bezel{padding:6px;border-radius:16px}
+}
+
+@media (prefers-reduced-motion:reduce){
+.ttl-root *,.ttl-root *::before,.ttl-root *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;transition-delay:0ms!important}
+}
+`

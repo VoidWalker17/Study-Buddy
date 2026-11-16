@@ -6,7 +6,7 @@ test.describe('Study Buddy Feynman Workflow & Theme Verification', () => {
 
     // 1. Verify Title & Hero
     await expect(page.locator('text=Study Buddy').first()).toBeVisible();
-    await expect(page.locator('h1').first()).toBeVisible();
+    await expect(page.locator('text=Teach the AI.').first()).toBeVisible();
 
     // 2. Test Light / Dark Theme Switcher
     const themeBtn = page.locator('button[aria-label="Toggle theme"]').first();
@@ -32,7 +32,7 @@ test.describe('Study Buddy Feynman Workflow & Theme Verification', () => {
       const demoBtn = page.locator('button:has-text("divyansh@studybuddy.ai")');
       if (await demoBtn.isVisible()) {
         await demoBtn.click();
-        await page.locator('form button[type="submit"]').click();
+        await page.locator('button:has-text("Sign In to Dashboard")').click();
         
         // Wait for dashboard view to appear
         await page.waitForTimeout(1000);
@@ -45,11 +45,51 @@ test.describe('Study Buddy Feynman Workflow & Theme Verification', () => {
 
   test('Direct workspace launch', async ({ page }) => {
     await page.goto('http://localhost:3002/');
-    const launchBtn = page.locator('button:has-text("Start Feynman Drill Free")').first();
+    const launchBtn = page.locator('button:has-text("Launch Learning Session"), button:has-text("Launch Studio")').first();
     await launchBtn.click();
 
     // Verify Study Tool is active on Step 1
     await expect(page.locator('text=Upload Study Material')).toBeVisible();
     await expect(page.locator('text=Step 1 • Course Material Setup')).toBeVisible();
+  });
+
+  test('Feynman Studio interactive teaching & science matrix', async ({ page }) => {
+    await page.goto('http://localhost:3002/');
+
+    // Wait for GSAP entrance animation to complete
+    await page.waitForTimeout(1500);
+
+    // Check Hero dashboard components inside .ttl-dash
+    const dash = page.locator('.ttl-dash');
+    await dash.scrollIntoViewIfNeeded();
+    await expect(dash.locator('text=Quantum Superposition').first()).toBeVisible();
+
+    // Click "Teach Agent" tab inside dashboard
+    const teachTab = dash.locator('button:has-text("Teach Agent")').first();
+    await teachTab.click();
+    await expect(dash.locator('text=Teach Child Agent')).toBeVisible();
+
+    // Transmit explanation
+    const transmitBtn = dash.locator('button:has-text("Transmit Explanation")');
+    await transmitBtn.click();
+    await expect(dash.locator('text=Transmitting Concept...')).toBeVisible();
+    
+    // Confirm transmission
+    const confirmBtn = dash.locator('button:has-text("Confirm Neural Ingestion")');
+    await confirmBtn.click();
+    await expect(dash.locator('text=Knowledge Consolidated')).toBeVisible({ timeout: 5000 });
+
+    // Verify 500-Synapse matrix slider & dots exist after scroll
+    const covSection = page.locator('[data-sec="coverage"]');
+    await covSection.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(600);
+    await expect(page.locator('text=500 Neural Concept Nodes')).toBeVisible();
+
+    // Verify Resource cards exist after scroll
+    const resSection = page.locator('[data-sec="resources"]');
+    await resSection.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(600);
+    await expect(page.locator('text=The Neurobiology of Active Teaching')).toBeVisible();
+    await expect(page.locator('text=Dual-Agent Cognitive Isolation')).toBeVisible();
   });
 });
