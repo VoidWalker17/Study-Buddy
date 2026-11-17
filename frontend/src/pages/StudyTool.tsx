@@ -316,7 +316,7 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                 </svg>
               </div>
               <div className="flex items-center">
-                <span className="font-bold text-base tracking-tight font-serif text-[#0f3238] dark:text-zinc-100">
+                <span className={`font-bold text-base tracking-tight font-serif ${isDark ? 'text-white' : 'text-[#0f3238]'}`}>
                   Study Buddy
                 </span>
                 {sessionTitle && (
@@ -420,7 +420,7 @@ export const StudyTool: React.FC<StudyToolProps> = ({
           <div className="mb-6 p-5 rounded-2xl bg-[#c2983b]/10 border border-[#c2983b]/30 flex items-center gap-4 animate-pulse">
             <Loader2 className="w-5 h-5 text-[#c2983b] animate-spin shrink-0" />
             <div>
-              <p className="text-sm font-bold text-[#0f3238] dark:text-zinc-100 font-serif">
+              <p className={`text-sm font-bold  font-serif ${isDark ? "text-white" : "text-[#0f3238]"}`}>
                 Socratic Processing Active
               </p>
               <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-[#4b5563]'}`}>
@@ -455,7 +455,7 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                 <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[#c2983b] bg-[#c2983b]/10 px-3 py-1 rounded-full border border-[#c2983b]/20">
                   Step 1 • Course Material Setup
                 </span>
-                <h2 className="text-2xl sm:text-3xl font-bold font-serif text-[#0f3238] dark:text-white tracking-tight mt-2">
+                <h2 className={`text-2xl sm:text-3xl font-bold font-serif tracking-tight  mt-2 ${isDark ? "text-white" : "text-[#0f3238]"}`}>
                   Upload Study Material
                 </h2>
                 <p className={`text-xs sm:text-sm leading-relaxed ${isDark ? 'text-zinc-400' : 'text-[#4b5563]'}`}>
@@ -532,7 +532,7 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                     <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
                       <FileText className="w-6 h-6" />
                     </div>
-                    <p className="font-bold text-sm text-[#0f3238] dark:text-white font-serif">
+                    <p className={`font-bold text-sm  font-serif ${isDark ? "text-white" : "text-[#0f3238]"}`}>
                       {file.name}
                     </p>
                     <p className="text-xs text-emerald-600 dark:text-emerald-400 font-mono">
@@ -544,7 +544,7 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                     <div className="w-12 h-12 rounded-2xl bg-[#c2983b]/10 text-[#c2983b] mx-auto flex items-center justify-center">
                       <UploadCloud className="w-6 h-6" />
                     </div>
-                    <p className="font-bold text-base text-[#0f3238] dark:text-white font-serif">
+                    <p className={`font-bold text-base  font-serif ${isDark ? "text-white" : "text-[#0f3238]"}`}>
                       Click to select PDF or drag and drop
                     </p>
                     <p className={`text-xs ${isDark ? 'text-zinc-500' : 'text-[#6b7280]'}`}>
@@ -590,7 +590,7 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                   <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[#c2983b] bg-[#c2983b]/10 px-3 py-1 rounded-full border border-[#c2983b]/20">
                     Step 2 • Feynman Cold Baseline
                   </span>
-                  <h2 className="text-2xl sm:text-3xl font-bold font-serif text-[#0f3238] dark:text-white tracking-tight mt-2">
+                  <h2 className={`text-2xl sm:text-3xl font-bold font-serif tracking-tight  mt-2 ${isDark ? "text-white" : "text-[#0f3238]"}`}>
                     Cold Baseline Exam Established
                   </h2>
                   <p className={`text-xs sm:text-sm mt-1 leading-relaxed ${isDark ? 'text-zinc-400' : 'text-[#4b5563]'}`}>
@@ -605,10 +605,10 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                       : 'bg-[#faf8f5] border-[#eae6dc]'
                   }`}
                 >
-                  <p className={`text-[10px] font-bold uppercase tracking-wider text-[#7a8482] dark:text-zinc-400 font-mono`}>
+                  <p className={`text-[10px] font-bold uppercase tracking-wider  font-mono`}>
                     Cold Baseline
                   </p>
-                  <p className="text-3xl font-bold font-serif text-[#0f3238] dark:text-white mt-0.5">
+                  <p className={`text-3xl font-bold font-serif mt-0.5 ${isDark ? 'text-white' : 'text-[#0f3238]'}`}>
                     {baselineScore}%
                   </p>
                 </div>
@@ -626,7 +626,7 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                   <Bot className="w-4 h-4" />
                 </div>
                 <div className="text-xs leading-relaxed space-y-1">
-                  <p className="font-bold text-sm text-[#0f3238] dark:text-white font-serif">
+                  <p className={`font-bold text-sm  font-serif ${isDark ? "text-white" : "text-[#0f3238]"}`}>
                     Why did the Child Agent score {baselineScore}%?
                   </p>
                   <p className={isDark ? 'text-zinc-400' : 'text-[#4b5563]'}>
@@ -638,7 +638,7 @@ export const StudyTool: React.FC<StudyToolProps> = ({
               {/* Questions Preview Toggle */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-sm sm:text-base font-serif text-[#0f3238] dark:text-white">
+                  <h3 className={`font-bold text-sm sm:text-base font-serif ${isDark ? 'text-white' : 'text-[#0f3238]'}`}>
                     Teacher Agent Prepared {questions.length} Evaluation Questions
                   </h3>
                   <div className="flex items-center gap-3">
@@ -674,16 +674,16 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-[#0f3238] dark:text-zinc-200 font-mono">
+                          <span className="font-bold  font-mono">
                             Q{idx + 1}. [{q.difficulty?.toUpperCase() || 'MEDIUM'}]
                           </span>
                           {q.concepts && (
-                            <span className="text-[10px] text-[#7a8482] dark:text-zinc-500 font-mono">
+                            <span className="text-[10px]  font-mono">
                               {q.concepts.join(', ')}
                             </span>
                           )}
                         </div>
-                        <p className="font-semibold text-xs sm:text-sm text-[#0f3238] dark:text-white">
+                        <p className="font-semibold text-xs sm:text-sm ">
                           {q.question}
                         </p>
                         <p className={`italic ${isDark ? 'text-zinc-400' : 'text-[#6b7280]'}`}>
@@ -720,7 +720,7 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                 <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[#c2983b] bg-[#c2983b]/10 px-3 py-1 rounded-full border border-[#c2983b]/20">
                   Step 3 • Active Feynman Teaching
                 </span>
-                <h2 className="text-2xl sm:text-3xl font-bold font-serif text-[#0f3238] dark:text-white tracking-tight mt-2">
+                <h2 className={`text-2xl sm:text-3xl font-bold font-serif tracking-tight  mt-2 ${isDark ? "text-white" : "text-[#0f3238]"}`}>
                   Teach the Child Agent
                 </h2>
                 <p className={`text-xs sm:text-sm mt-1 leading-relaxed ${isDark ? 'text-zinc-400' : 'text-[#4b5563]'}`}>
@@ -812,7 +812,7 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                     <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#eae6dc] dark:border-zinc-800">
                       <div className="flex items-center gap-2">
                         <Bot className="w-4 h-4 text-[#c2983b]" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-[#0f3238] dark:text-zinc-200 font-mono">
+                        <h4 className="text-xs font-bold uppercase tracking-wider  font-mono">
                           Child Memory Buffer
                         </h4>
                       </div>
@@ -824,7 +824,7 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                     {taughtConcepts.length === 0 ? (
                       <div className="py-10 text-center text-xs opacity-70 space-y-2">
                         <GraduationCap className="w-8 h-8 mx-auto text-[#c2983b] opacity-80" />
-                        <p className="text-[#4b5563] dark:text-zinc-400">
+                        <p className="">
                           The Child Agent is waiting for your explanation. Teach a concept to begin memory synthesis.
                         </p>
                       </div>
@@ -840,7 +840,7 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                             }`}
                           >
                             <div className="flex items-center justify-between">
-                              <span className="font-bold text-[#0f3238] dark:text-white">{c.name}</span>
+                              <span className="font-bold ">{c.name}</span>
                               <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
                                 {Math.round((c.confidence || 0.5) * 100)}% Depth
                               </span>
@@ -882,7 +882,7 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                   <span className="text-xs font-mono font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
                     Step 4 • Evaluation Complete
                   </span>
-                  <h2 className="text-2xl sm:text-3xl font-bold font-serif text-[#0f3238] dark:text-white tracking-tight mt-2">
+                  <h2 className={`text-2xl sm:text-3xl font-bold font-serif tracking-tight  mt-2 ${isDark ? "text-white" : "text-[#0f3238]"}`}>
                     Feynman Learning Results
                   </h2>
                   <p className={`text-xs sm:text-sm mt-1 leading-relaxed ${isDark ? 'text-zinc-400' : 'text-[#4b5563]'}`}>
@@ -899,10 +899,10 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                         : 'bg-[#faf8f5] border-[#eae6dc]'
                     }`}
                   >
-                    <p className={`text-[10px] font-bold uppercase tracking-wider text-[#7a8482] dark:text-zinc-400 font-mono`}>
+                    <p className={`text-[10px] font-bold uppercase tracking-wider  font-mono`}>
                       Cold Baseline
                     </p>
-                    <p className="text-xl font-bold font-serif text-[#0f3238] dark:text-zinc-300 mt-0.5">
+                    <p className={`text-xl font-bold font-serif mt-0.5 ${isDark ? 'text-zinc-300' : 'text-[#0f3238]'}`}>
                       {baselineScore}%
                     </p>
                   </div>
@@ -914,19 +914,19 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                         : 'bg-[#faf8f5] border-[#eae6dc]'
                     }`}
                   >
-                    <p className={`text-[10px] font-bold uppercase tracking-wider text-[#7a8482] dark:text-zinc-400 font-mono`}>
+                    <p className={`text-[10px] font-bold uppercase tracking-wider  font-mono`}>
                       Post-Teaching
                     </p>
-                    <p className="text-xl font-bold font-serif text-[#0f3238] dark:text-white mt-0.5">
+                    <p className={`text-xl font-bold font-serif mt-0.5 ${isDark ? 'text-white' : 'text-[#0f3238]'}`}>
                       {finalScore}%
                     </p>
                   </div>
 
-                  <div className="p-3.5 rounded-2xl border text-center min-w-[130px] bg-[#c2983b]/10 border-[#c2983b]/30 text-[#0f3238] dark:text-zinc-100">
+                  <div className="p-3.5 rounded-2xl border text-center min-w-[130px] bg-[#c2983b]/10 border-[#c2983b]/30 ">
                     <p className="text-[10px] font-bold uppercase tracking-wider font-mono text-[#c2983b]">
                       Teaching Efficacy (TES)
                     </p>
-                    <p className="text-2xl font-black font-serif text-[#c2983b] mt-0.5">
+                    <p className={`text-2xl font-black font-serif text-[#c2983b] mt-0.5 ${isDark ? "text-white" : "text-[#0f3238]"}`}>
                       {tesScore}%
                     </p>
                   </div>
@@ -985,7 +985,7 @@ export const StudyTool: React.FC<StudyToolProps> = ({
 
               {/* Question By Question Breakdown */}
               <div className="space-y-4">
-                <h3 className="text-base sm:text-lg font-bold font-serif text-[#0f3238] dark:text-white">
+                <h3 className={`text-base sm:text-lg font-bold font-serif ${isDark ? 'text-white' : 'text-[#0f3238]'}`}>
                   Exam Breakdown & Teacher Agent Evaluation
                 </h3>
                 {examResults.map((res, idx) => (
@@ -1002,7 +1002,7 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                         <span className="text-[10px] font-bold uppercase tracking-wider font-mono text-[#c2983b]">
                           Question {idx + 1}
                         </span>
-                        <h4 className="text-sm sm:text-base font-bold text-[#0f3238] dark:text-white mt-0.5">
+                        <h4 className="text-sm sm:text-base font-bold  mt-0.5">
                           {res.question}
                         </h4>
                       </div>
@@ -1025,7 +1025,7 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                             : 'bg-white border-[#eae6dc] text-[#4b5563]'
                         }`}
                       >
-                        <p className={`font-bold uppercase tracking-wider text-[10px] mb-1 font-mono text-[#7a8482] dark:text-zinc-500`}>
+                        <p className={`font-bold uppercase tracking-wider text-[10px] mb-1 font-mono `}>
                           Cold Baseline (Pre-Teaching)
                         </p>
                         <p className="italic">
@@ -1040,7 +1040,7 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                             : 'bg-white border-[#eae6dc]'
                         }`}
                       >
-                        <p className="font-bold uppercase tracking-wider text-[10px] mb-1 font-mono text-[#0f3238] dark:text-zinc-200">
+                        <p className="font-bold uppercase tracking-wider text-[10px] mb-1 font-mono ">
                           Child Agent (Post-Teaching)
                         </p>
                         <p className={isDark ? 'text-zinc-200' : 'text-[#12181a]'}>{res.childAnswer}</p>
@@ -1053,7 +1053,7 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                             : 'bg-white border-[#eae6dc]'
                         }`}
                       >
-                        <p className={`font-bold uppercase tracking-wider text-[10px] mb-1 font-mono text-[#7a8482] dark:text-zinc-500`}>
+                        <p className={`font-bold uppercase tracking-wider text-[10px] mb-1 font-mono `}>
                           Expected Ground Truth
                         </p>
                         <p className={isDark ? 'text-zinc-300' : 'text-[#4b5563]'}>{res.expected}</p>
@@ -1069,7 +1069,7 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                     >
                       <Sparkles className="w-4 h-4 text-[#c2983b] shrink-0 mt-0.5" />
                       <div>
-                        <span className="font-bold text-[#0f3238] dark:text-zinc-100">Teacher's Critique: </span>
+                        <span className="font-bold ">Teacher's Critique: </span>
                         <span>{res.feedback}</span>
                       </div>
                     </div>
