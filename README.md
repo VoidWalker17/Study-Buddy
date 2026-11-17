@@ -1,5 +1,8 @@
 # Study Buddy 🧠
 
+
+https://studybuddy-feynman.vercel.app/
+
 **You teach the AI. It takes the exam.**
 
 Study Buddy is an AI web app built around the **Feynman Technique** — *"if you can't explain it simply, you don't understand it well enough."* Instead of an AI tutoring the student, the student teaches a deliberately "blank" AI learner. If that learner can pass a closed-book exam using only what it was taught, the student has proven they actually understood the material.
