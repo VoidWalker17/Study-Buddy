@@ -356,14 +356,15 @@ const I = {
   cpu: "M4 4h16v16H4zM9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3",
 }
 
-function BrainMark({ size = 22 }: { size?: number }) {
+function BrainMark({ size = 26 }: { size?: number }) {
   return (
-    <svg className="ttl-svg" width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
-      <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--ttl-accent)" />
-      <path d="M10 9c0-1.7 1.3-3 3-3 .6 0 1.2.2 1.7.5.5-.3 1.1-.5 1.7-.5 1.7 0 3 1.3 3 3 0 .4-.1.8-.2 1.1 1.4.5 2.4 1.8 2.4 3.4 0 1.4-.8 2.6-2 3.1.1.4.1.7.1 1.1 0 2.2-1.8 4-4 4-.6 0-1.2-.1-1.7-.4-.5.3-1.1.4-1.7.4-2.2 0-4-1.8-4-4 0-.4 0-.7.1-1.1-1.2-.5-2-1.7-2-3.1 0-1.6 1-2.9 2.4-3.4-.1-.3-.2-.7-.2-1.1z" fill="none" stroke="var(--ttl-page)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="16" cy="15" r="2.2" fill="var(--ttl-gold)" />
-      <line x1="16" y1="10" x2="16" y2="20" stroke="var(--ttl-gold)" strokeWidth="1.4" strokeDasharray="1.5 2" />
-    </svg>
+    <img
+      src="/brand/study-buddy-icon.svg"
+      alt="Study Buddy Logo"
+      width={size}
+      height={size}
+      className="ttl-svg rounded-lg object-contain shadow-xs"
+    />
   )
 }
 
@@ -393,6 +394,7 @@ function Nav({
   onOpenAuth,
   onGoToDashboard,
   onStart,
+  onLogout,
 }: {
   brand: string
   logo?: React.ReactNode
@@ -404,23 +406,30 @@ function Nav({
   onOpenAuth: (mode?: 'login' | 'register') => void
   onGoToDashboard: () => void
   onStart: () => void
+  onLogout?: () => void
 }) {
   const [open, setOpen] = React.useState(false)
   const [sheet, setSheet] = React.useState(false)
+  const [menuOpen, setMenuOpen] = React.useState(false)
   const boxRef = React.useRef(null as HTMLDivElement | null)
+  const menuRef = React.useRef(null as HTMLDivElement | null)
 
   React.useEffect(() => {
-    if (!open && !sheet) return
+    if (!open && !sheet && !menuOpen) return
     const away = (e: PointerEvent) => {
       if (boxRef.current && !boxRef.current.contains(e.target as Node)) {
         setOpen(false)
         setSheet(false)
+      }
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
       }
     }
     const esc = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setOpen(false)
         setSheet(false)
+        setMenuOpen(false)
       }
     }
     document.addEventListener("pointerdown", away)
@@ -429,15 +438,18 @@ function Nav({
       document.removeEventListener("pointerdown", away)
       document.removeEventListener("keydown", esc)
     }
-  }, [open, sheet])
+  }, [open, sheet, menuOpen])
 
   const close = (href?: string) => (e: React.MouseEvent) => {
     setOpen(false)
     setSheet(false)
+    setMenuOpen(false)
     go(href)(e)
   }
 
   const products = nav.products ?? []
+  const initial = user?.name ? user.name.charAt(0).toUpperCase() : (user?.email ? user.email.charAt(0).toUpperCase() : 'D')
+  const fullName = user?.name || (user?.email ? user.email.split('@')[0] : 'Divyansh Agarwal')
 
   return (
     <header className="ttl-nav" data-scrolled={scrolled || undefined}>
@@ -477,13 +489,141 @@ function Nav({
           <ThemeToggle />
           <div className="ttl-nav-sep" />
           {isAuthenticated ? (
-            <button
-              type="button"
-              className="ttl-btn ttl-btn-lilac ttl-btn-sm"
-              onClick={onGoToDashboard}
-            >
-              Dashboard ({user?.name?.split(" ")[0] || "Student"})
-            </button>
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                onClick={() => setMenuOpen((o) => !o)}
+                className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border border-[var(--ttl-rule)] bg-[var(--ttl-paper)] hover:border-[var(--ttl-ink)] transition-all cursor-pointer shadow-xs"
+              >
+                <div className="w-7 h-7 rounded-full bg-[#0f3238] text-white flex items-center justify-center font-bold text-xs">
+                  {initial}
+                </div>
+                <span className="text-xs font-semibold text-[var(--ttl-ink)] hidden sm:inline-block">
+                  {fullName}
+                </span>
+                <Icon d={I.down} size={13} className={`text-[var(--ttl-muted)] transition-transform duration-200 ${menuOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* User Dropdown Menu Card matching reference */}
+              {menuOpen && (
+                <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-[var(--ttl-paper)] border border-[var(--ttl-rule)] shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  {/* User Profile Header */}
+                  <div className="p-3 border-b border-[var(--ttl-rule)] flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#0f3238] text-white flex items-center justify-center font-bold text-base shrink-0 shadow-xs">
+                      {initial}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-sm text-[var(--ttl-ink)] truncate font-serif">
+                        {fullName}
+                      </div>
+                      <div className="text-[11px] text-[var(--ttl-muted)] truncate">
+                        {user?.email || 'scholar@studybuddy.ai'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Navigation Links */}
+                  <div className="py-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onGoToDashboard();
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-[var(--ttl-ink)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-left"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <svg className="w-4 h-4 text-[#c2983b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <rect width="7" height="9" x="3" y="3" rx="1" />
+                          <rect width="7" height="5" x="14" y="3" rx="1" />
+                          <rect width="7" height="9" x="14" y="12" rx="1" />
+                          <rect width="7" height="5" x="3" y="16" rx="1" />
+                        </svg>
+                        <span>Learning Dashboard</span>
+                      </div>
+                      <Icon d={I.arrow} size={12} className="text-[var(--ttl-muted)]" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onGoToDashboard();
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-[var(--ttl-ink)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-left"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <circle cx="12" cy="8" r="5" />
+                          <path d="M20 21a8 8 0 1 0-16 0" />
+                        </svg>
+                        <span>Edit Profile</span>
+                      </div>
+                      <Icon d={I.arrow} size={12} className="text-[var(--ttl-muted)]" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onGoToDashboard();
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-[var(--ttl-ink)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-left"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <svg className="w-4 h-4 text-[#8285f2]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <circle cx="12" cy="12" r="3" />
+                          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                        </svg>
+                        <span>Settings & Privacy</span>
+                      </div>
+                      <Icon d={I.arrow} size={12} className="text-[var(--ttl-muted)]" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        window.location.hash = "#faq";
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-[var(--ttl-ink)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-left"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <svg className="w-4 h-4 text-[#c2983b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <circle cx="12" cy="12" r="10" />
+                          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                          <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                        <span>Help & Support</span>
+                      </div>
+                      <Icon d={I.arrow} size={12} className="text-[var(--ttl-muted)]" />
+                    </button>
+                  </div>
+
+                  {/* Sign Out Action */}
+                  <div className="pt-1 mt-1 border-t border-[var(--ttl-rule)]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        if (onLogout) onLogout();
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-red-600 hover:bg-red-500/10 transition-colors cursor-pointer text-left"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                          <polyline points="16 17 21 12 16 7" />
+                          <line x1="21" y1="12" x2="9" y2="12" />
+                        </svg>
+                        <span>Sign Out</span>
+                      </div>
+                      <Icon d={I.arrow} size={12} className="opacity-60" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <>
               <button
@@ -1126,14 +1266,16 @@ interface LandingPageProps {
   onStart: () => void
   onOpenAuth: (mode?: 'login' | 'register') => void
   onGoToDashboard: () => void
+  onLogout?: () => void
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
   onStart,
   onOpenAuth,
   onGoToDashboard,
+  onLogout,
 }) => {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, user, logout } = useAuth()
   const { theme } = useTheme()
   const isDark = theme === "dark"
   const pal = isDark ? PALETTES.darkTeal : PALETTES.teal
@@ -1316,7 +1458,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           links: [
             { label: "Methodology", href: "#features" },
             { label: "Architecture", href: "#coverage" },
-            { label: "Research", href: "#pricing" },
+            { label: "Evidence", href: "#pricing" },
             { label: "Whitepapers", href: "#resources" },
             { label: "FAQ", href: "#faq" },
           ],
@@ -1328,6 +1470,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         onOpenAuth={onOpenAuth}
         onGoToDashboard={onGoToDashboard}
         onStart={onStart}
+        onLogout={onLogout || logout}
       />
 
       {/* Hero */}

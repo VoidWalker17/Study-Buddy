@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { BookOpen, ArrowRight, Loader2, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Loader2, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { ThemeToggle } from "../ThemeToggle";
@@ -153,9 +153,11 @@ export const FullScreenSignup: React.FC<FullScreenSignupProps> = ({
           {/* Top Brand Tag (Matching Reference Mockup: Open Book Icon + Study Buddy) */}
           <div className="relative z-10 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-white/15 backdrop-blur-md flex items-center justify-center text-white border border-white/25 shadow-sm">
-                <BookOpen className="w-4 h-4" />
-              </div>
+              <img
+                src="/brand/study-buddy-icon.svg"
+                alt="Study Buddy"
+                className="w-8 h-8 rounded-lg object-contain border border-white/25 shadow-sm"
+              />
               <span className="font-semibold text-lg tracking-tight text-white drop-shadow-sm font-sans">
                 Study Buddy
               </span>

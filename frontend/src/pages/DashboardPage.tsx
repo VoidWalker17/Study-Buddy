@@ -10,72 +10,94 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { StudyTool } from './StudyTool';
 
 interface DashboardPageProps {
-  onStartSession: (sessionData?: any) => void;
+  onStartSession?: (sessionData?: any) => void;
   onLogout: () => void;
+  onGoToLanding: () => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   onStartSession,
   onLogout,
+  onGoToLanding,
 }) => {
   const { user } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
   // Workspace Navigation Tab
-  const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'tool' | 'history'>('overview');
+  const [activeSession, setActiveSession] = useState<any>(null);
 
   // Sessions and analytics from backend
   const [sessions, setSessions] = useState<any[]>([]);
+  const [analytics, setAnalytics] = useState<any>({
+    total_sessions: 0,
+    avg_tes: 0,
+    avg_baseline: 0,
+    avg_final: 0,
+    concepts_mastered: 0,
+    improvement_rate: 0
+  });
+
+  const handleLaunchTool = (sessionData?: any) => {
+    if (onStartSession) {
+      onStartSession(sessionData);
+    }
+    setActiveSession(sessionData || null);
+    setActiveTab('tool');
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const res = await axios.get('/api/sessions/history');
-        if (res.data?.sessions && res.data.sessions.length > 0) {
-          setSessions(res.data.sessions);
-        } else {
-          setSessions([
-            {
-              id: 'ses_quantum_401',
-              title: 'Quantum Electrodynamics & Hilbert States',
-              subject: 'Advanced Physics',
-              baseline_score: 12.0,
-              final_score: 94.0,
-              tes_score: 88.5,
-              created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-            },
-            {
-              id: 'ses_thermo_302',
-              title: 'Statistical Thermodynamics & Microstates',
-              subject: 'Physical Chemistry',
-              baseline_score: 18.0,
-              final_score: 92.0,
-              tes_score: 86.1,
-              created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
-            },
-            {
-              id: 'ses_transformer_ai',
-              title: 'Transformer Attention & Positional Encoding',
-              subject: 'Deep Learning',
-              baseline_score: 15.0,
-              final_score: 95.0,
-              tes_score: 83.8,
-              created_at: new Date(Date.now() - 3600000 * 48).toISOString(),
-            },
-          ]);
+        const [historyRes, analyticsRes] = await Promise.all([
+          axios.get('/api/sessions/history'),
+          axios.get('/api/sessions/analytics')
+        ]);
+        if (historyRes.data?.sessions) {
+          setSessions(historyRes.data.sessions);
+        }
+        if (analyticsRes.data?.analytics) {
+          setAnalytics(analyticsRes.data.analytics);
         }
       } catch (err) {
-        console.warn('Dashboard fallback to local sessions:', err);
+        console.warn('Dashboard fetch error:', err);
       }
     };
 
     fetchDashboardData();
-  }, []);
+  }, [activeTab]);
 
   const studentName = user?.name || user?.email?.split('@')[0] || 'Divyansh';
+
+  // Compute live values from actual user sessions
+  const completedSessions = sessions.filter(s => s.status === 'completed' || s.final_score > 0);
+  const totalCompletedCount = completedSessions.length;
+  
+  const computedAvgTes = analytics.avg_tes > 0 
+    ? analytics.avg_tes 
+    : totalCompletedCount > 0 
+      ? Math.round(completedSessions.reduce((acc, s) => acc + (parseFloat(s.tes_score) || 0), 0) / totalCompletedCount)
+      : 0;
+
+  const computedAvgFinal = analytics.avg_final > 0
+    ? analytics.avg_final
+    : totalCompletedCount > 0
+      ? Math.round(completedSessions.reduce((acc, s) => acc + (parseFloat(s.final_score) || 0), 0) / totalCompletedCount)
+      : 0;
+
+  const computedDelta = analytics.improvement_rate > 0
+    ? analytics.improvement_rate
+    : totalCompletedCount > 0
+      ? Math.round(
+          completedSessions.reduce((acc, s) => acc + (parseFloat(s.final_score) || 0) - (parseFloat(s.baseline_score) || 0), 0) / totalCompletedCount
+        )
+      : 0;
+
+  const uniqueSubjectsCount = new Set(sessions.map(s => s.subject || s.title)).size;
 
   // Color tokens guaranteed to be high contrast in both themes
   const headingColor = isDark ? 'text-white' : 'text-[#0f3238]';
@@ -101,30 +123,26 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       >
         <div className="p-5 space-y-6">
           {/* Brand Header: Study Buddy */}
-          <div className="flex items-center gap-3 px-1">
-            <div className="w-8 h-8 rounded-xl bg-[#0f3238] flex items-center justify-center text-[#c2983b] shadow-xs">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-4 h-4"
-              >
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-              </svg>
-            </div>
+          <button
+            type="button"
+            onClick={onGoToLanding}
+            className="flex items-center gap-3 px-1 text-left w-full cursor-pointer group rounded-xl p-1 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            title="Return to Landing Page"
+          >
+            <img
+              src="/brand/study-buddy-icon.svg"
+              alt="Study Buddy"
+              className="w-8 h-8 rounded-xl object-contain shadow-xs group-hover:scale-105 transition-transform"
+            />
             <div>
-              <span className={`font-bold text-sm tracking-tight block leading-tight font-serif ${headingColor}`}>
+              <span className={`font-bold text-sm tracking-tight block leading-tight font-serif ${headingColor} group-hover:text-[#c2983b] transition-colors`}>
                 Study Buddy
               </span>
               <span className={`text-[10px] font-mono tracking-wider uppercase ${mutedColor}`}>
                 Feynman Studio
               </span>
             </div>
-          </div>
+          </button>
 
           {/* Section: WORKSPACE TABS */}
           <div className="space-y-1.5">
@@ -150,19 +168,23 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <span className="font-semibold">Dashboard</span>
             </button>
 
-            {/* Teach Child AI / New Learning Session */}
+            {/* Teach Child AI / Study Tool Chamber Tab */}
             <button
               type="button"
-              onClick={() => onStartSession()}
+              onClick={() => setActiveTab('tool')}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all text-left cursor-pointer group ${
-                isDark
-                  ? 'text-zinc-300 hover:text-white hover:bg-zinc-800'
-                  : 'text-[#374151] hover:text-white hover:bg-[#0f3238]'
+                activeTab === 'tool'
+                  ? isDark
+                    ? 'bg-zinc-800 text-white shadow-xs border border-zinc-700'
+                    : 'bg-[#f4f2ea] text-[#0f3238] font-bold shadow-xs border border-[#eae6dc]'
+                  : isDark
+                  ? 'text-zinc-300 hover:text-white hover:bg-white/5'
+                  : 'text-[#374151] hover:text-[#0f3238] hover:bg-black/5 font-medium'
               }`}
             >
-              <Bot className="w-4 h-4 text-[#2b7a58] group-hover:text-white transition-colors" />
+              <Bot className="w-4 h-4 text-[#2b7a58]" />
               <span className="font-semibold">Teach Child AI</span>
-              <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 font-mono font-bold group-hover:bg-white/20 group-hover:text-white">
+              <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 font-mono font-bold">
                 Launch
               </span>
             </button>
@@ -268,7 +290,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             <span className={mutedColor}>Study Buddy</span>
             <span className="text-[#9ca3af]">/</span>
             <span className={`font-semibold ${headingColor}`}>
-              {activeTab === 'overview' ? 'Learning Dashboard' : 'Session History & Records'}
+              {activeTab === 'overview'
+                ? 'Learning Dashboard'
+                : activeTab === 'tool'
+                ? 'Teaching Chamber'
+                : 'Session History & Records'}
             </span>
           </div>
 
@@ -276,7 +302,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => onStartSession()}
+              onClick={() => handleLaunchTool()}
               className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#0f3238] text-white hover:bg-[#163b40] active:scale-95 transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5 text-[#c2983b]" />
@@ -314,7 +340,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     }`}
                   >
                     <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
-                    <span>5-Day Study Streak</span>
+                    <span>{totalCompletedCount > 0 ? `${Math.min(10, totalCompletedCount)}-Day Streak` : 'Active Scholar'}</span>
                   </div>
                 </div>
               </div>
@@ -328,22 +354,22 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     <Sparkles className="w-4 h-4 text-[#c2983b]" />
                   </div>
                   <div className={`mt-2 text-3xl font-extrabold font-serif ${headingColor}`}>
-                    88.5%
+                    {computedAvgTes > 0 ? `${computedAvgTes}%` : '—'}
                   </div>
                   <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
                     <TrendingUp className="w-3.5 h-3.5" />
-                    <span>+34.2% Delta vs. Baseline</span>
+                    <span>{computedDelta > 0 ? `+${computedDelta}% Delta vs. Baseline` : 'Awaiting baseline'}</span>
                   </div>
                 </div>
 
                 {/* Metric 2: Topics Mastered */}
                 <div className={`p-5 rounded-2xl border transition-all ${cardBg}`}>
                   <div className={`flex items-center justify-between text-xs font-medium ${mutedColor}`}>
-                    <span>Topics Mastered</span>
+                    <span>Topics Explored</span>
                     <BookOpen className="w-4 h-4 text-[#2b7a58]" />
                   </div>
                   <div className={`mt-2 text-3xl font-extrabold font-serif ${headingColor}`}>
-                    24
+                    {uniqueSubjectsCount}
                   </div>
                   <div className={`mt-1 text-[11px] ${mutedColor}`}>
                     Syllabi & Chapters taught
@@ -357,7 +383,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   </div>
                   <div className={`mt-2 text-3xl font-extrabold font-serif ${headingColor}`}>
-                    {sessions.length || 3}
+                    {totalCompletedCount}
                   </div>
                   <div className={`mt-1 text-[11px] ${mutedColor}`}>
                     Full Feynman Cycles
@@ -367,14 +393,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 {/* Metric 4: Child AI Exam Pass Rate */}
                 <div className={`p-5 rounded-2xl border transition-all ${cardBg}`}>
                   <div className={`flex items-center justify-between text-xs font-medium ${mutedColor}`}>
-                    <span>Child Exam Pass Rate</span>
+                    <span>Child Exam Score</span>
                     <GraduationCap className="w-4 h-4 text-[#8285f2]" />
                   </div>
                   <div className={`mt-2 text-3xl font-extrabold font-serif ${headingColor}`}>
-                    93.6%
+                    {computedAvgFinal > 0 ? `${computedAvgFinal}%` : '—'}
                   </div>
                   <div className="mt-1 text-[11px] text-emerald-700 font-bold">
-                    Certified Mastery
+                    {totalCompletedCount > 0 ? 'Verified Post-Exam' : 'Pending Sessions'}
                   </div>
                 </div>
               </div>
@@ -398,7 +424,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => onStartSession()}
+                  onClick={() => handleLaunchTool()}
                   className="px-6 py-3 rounded-2xl font-semibold text-white bg-[#0f3238] hover:bg-[#163b40] active:scale-95 transition-all shadow-md shadow-[#0f3238]/20 flex items-center gap-2 cursor-pointer shrink-0"
                 >
                   <span>Launch Teaching Chamber</span>
@@ -443,52 +469,60 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     isDark ? 'divide-zinc-800' : 'divide-[#eae6dc]'
                   }`}
                 >
-                  {sessions.slice(0, 3).map((ses) => (
-                    <div
-                      key={ses.id}
-                      className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 first:pt-0 last:pb-0"
-                    >
-                      <div className="space-y-1.5">
-                        <div className={`font-bold text-sm ${headingColor}`}>
-                          {ses.title}
+                  {sessions.length > 0 ? (
+                    sessions.slice(0, 3).map((ses) => (
+                      <div
+                        key={ses.id}
+                        className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 first:pt-0 last:pb-0"
+                      >
+                        <div className="space-y-1.5">
+                          <div className={`font-bold text-sm ${headingColor}`}>
+                            {ses.title}
+                          </div>
+                          <div className={`flex items-center gap-3 text-xs font-medium ${bodyColor}`}>
+                            <span
+                              className={`px-2 py-0.5 rounded-md border font-semibold ${
+                                isDark
+                                  ? 'bg-zinc-800 border-zinc-700 text-zinc-200'
+                                  : 'bg-[#faf8f5] border-[#eae6dc] text-[#0f3238]'
+                              }`}
+                            >
+                              {ses.subject || 'General'}
+                            </span>
+                            <span>•</span>
+                            <span>Baseline: {ses.baseline_score || 0}%</span>
+                            <span>•</span>
+                            <span>Final: {ses.final_score || 0}%</span>
+                          </div>
                         </div>
-                        <div className={`flex items-center gap-3 text-xs font-medium ${bodyColor}`}>
-                          <span
-                            className={`px-2 py-0.5 rounded-md border font-semibold ${
-                              isDark
-                                ? 'bg-zinc-800 border-zinc-700 text-zinc-200'
-                                : 'bg-[#faf8f5] border-[#eae6dc] text-[#0f3238]'
-                            }`}
+
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <div className="text-sm font-bold text-[#c2983b] font-mono">
+                              TES {ses.tes_score || 0}%
+                            </div>
+                            <div className="text-[10px] text-emerald-700 font-bold">
+                              Verified Retention
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleLaunchTool(ses)}
+                            className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#0f3238] text-white hover:bg-[#163b40] active:scale-95 transition-all shadow-xs cursor-pointer"
                           >
-                            {ses.subject || 'Physics'}
-                          </span>
-                          <span>•</span>
-                          <span>Baseline: {ses.baseline_score || 12}%</span>
-                          <span>•</span>
-                          <span>Final: {ses.final_score || 94}%</span>
+                            Resume →
+                          </button>
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <div className="text-sm font-bold text-[#c2983b] font-mono">
-                            TES {ses.tes_score || 88}%
-                          </div>
-                          <div className="text-[10px] text-emerald-700 font-bold">
-                            Verified Retention
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => onStartSession(ses)}
-                          className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#0f3238] text-white hover:bg-[#163b40] active:scale-95 transition-all shadow-xs cursor-pointer"
-                        >
-                          Resume →
-                        </button>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="py-8 text-center space-y-2">
+                      <p className={`text-xs ${mutedColor}`}>
+                        No learning sessions yet. Launch the chamber above to begin!
+                      </p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             </>
@@ -531,7 +565,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
                   <button
                     type="button"
-                    onClick={() => onStartSession()}
+                    onClick={() => handleLaunchTool()}
                     className="text-xs font-semibold px-3.5 py-2 rounded-xl bg-[#0f3238] text-white hover:bg-[#163b40] active:scale-95 transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
                   >
                     <Plus className="w-3.5 h-3.5 text-[#c2983b]" />
@@ -608,7 +642,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
                         <button
                           type="button"
-                          onClick={() => onStartSession(ses)}
+                          onClick={() => handleLaunchTool(ses)}
                           className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#0f3238] text-white hover:bg-[#163b40] active:scale-95 transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
                         >
                           <span>Resume</span>
@@ -628,7 +662,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     </p>
                     <button
                       type="button"
-                      onClick={() => onStartSession()}
+                      onClick={() => handleLaunchTool()}
                       className="mt-2 px-5 py-2.5 rounded-xl text-xs font-semibold bg-[#0f3238] text-white hover:bg-[#163b40] transition-all cursor-pointer"
                     >
                       Start First Session →
@@ -636,6 +670,21 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* TEACH CHILD AI / TOOL TAB                                 */}
+          {/* ========================================================= */}
+          {activeTab === 'tool' && (
+            <div className="w-full">
+              <StudyTool
+                initialSession={activeSession}
+                isEmbedded={true}
+                onBack={() => setActiveTab('overview')}
+                onGoToDashboard={() => setActiveTab('overview')}
+                onOpenAuth={() => {}}
+              />
             </div>
           )}
         </main>

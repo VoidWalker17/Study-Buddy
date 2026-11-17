@@ -19,13 +19,15 @@ interface StudyToolProps {
   onBack: () => void;
   onGoToDashboard: () => void;
   onOpenAuth: () => void;
+  isEmbedded?: boolean;
 }
 
 export const StudyTool: React.FC<StudyToolProps> = ({
   initialSession,
   onBack,
   onGoToDashboard,
-  onOpenAuth
+  onOpenAuth,
+  isEmbedded = false
 }) => {
   const { user, isAuthenticated } = useAuth();
   const { theme } = useTheme();
@@ -119,9 +121,11 @@ export const StudyTool: React.FC<StudyToolProps> = ({
       // 2. Upload Document & Extract Concepts + Questions
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('user_id', userId);
+      if (currentSessionId) {
+        formData.append('session_id', currentSessionId);
+      }
 
-      const processRes = await axios.post('/api/documents/process-pdf', formData, {
+      const processRes = await axios.post('/api/ml/process-document', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -133,15 +137,15 @@ export const StudyTool: React.FC<StudyToolProps> = ({
 
       // 3. Automatically run Cold Baseline Exam
       setLoadingMessage('Simulating cold baseline exam with Child Agent (Zero Document Access)...');
-      const baselineRes = await axios.post('/api/evaluations/run-baseline', {
+      const baselineRes = await axios.post('/api/ml/run-baseline-exam', {
         user_id: userId,
-        session_id: currentSessionId,
+        session_id: currentSessionId || 'anon_session',
         questions: generatedQuestions
       });
 
       const bScore = baselineRes.data?.baseline_score ?? 14.0;
       setBaselineScore(bScore);
-      setBaselineAnswers(baselineRes.data?.details || []);
+      setBaselineAnswers(baselineRes.data?.results || []);
 
       // Advance to Step 2
       setStep(2);
@@ -159,18 +163,18 @@ export const StudyTool: React.FC<StudyToolProps> = ({
     if (!teachingText.trim()) return;
 
     setLoading(true);
-    setLoadingMessage('Transmitting explanation to Child Agent...');
+    setLoadingMessage('Extracting concepts & transmitting explanation to Child Agent...');
     setError('');
 
     try {
-      const teachRes = await axios.post('/api/teaching/explain', {
+      const teachRes = await axios.post('/api/ml/extract-concepts', {
         user_id: userId,
         session_id: sessionId,
         explanation: teachingText,
-        subject: sessionSubject
+        source_concepts: []
       });
 
-      const newTaught = teachRes.data?.learned_concepts || [];
+      const newTaught = teachRes.data?.extracted_concepts || [];
       setTaughtConcepts(prev => [...prev, ...newTaught]);
       setTeachingText('');
       resetTranscript();
@@ -190,27 +194,79 @@ export const StudyTool: React.FC<StudyToolProps> = ({
     setError('');
 
     try {
-      const finalRes = await axios.post('/api/evaluations/run-final', {
-        user_id: userId,
-        session_id: sessionId,
-        questions: questions
-      });
+      // Evaluate each question using child memory retrieval and teacher grading
+      const results: any[] = [];
+      let totalFinalScore = 0;
 
-      const fScore = finalRes.data?.final_score ?? 88.0;
-      const computedTes = finalRes.data?.tes_score ?? 84.5;
-      const details = finalRes.data?.details || [];
+      for (const q of questions) {
+        const qText = q.question || '';
+        const expected = q.expectedAnswer || '';
+        const qid = q.id || '';
+
+        // 1. Child answers strictly from taught memory
+        let childAnswer = "I don't know the answer to this yet because you haven't taught me.";
+        try {
+          const memRes = await axios.post('/api/ml/retrieve-memory', {
+            question: qText,
+            user_id: userId,
+            session_id: sessionId
+          });
+          childAnswer = memRes.data?.answer || childAnswer;
+        } catch (e) {
+          console.warn("Child retrieve-memory error:", e);
+        }
+
+        // 2. Teacher grades the child's answer
+        let score = 0;
+        let feedback = "No explanation provided.";
+        try {
+          const gradeRes = await axios.post('/api/ml/grade-answer', {
+            question: qText,
+            student_answer: childAnswer,
+            expected_answer: expected,
+            session_id: sessionId,
+            question_id: qid,
+            exam_type: "final"
+          });
+          score = parseFloat(gradeRes.data?.score ?? 0);
+          feedback = gradeRes.data?.feedback ?? "";
+        } catch (e) {
+          console.warn("Grade answer error:", e);
+        }
+
+        totalFinalScore += score;
+        results.push({
+          questionId: qid,
+          question: qText,
+          childAnswer,
+          expected,
+          score,
+          feedback
+        });
+      }
+
+      const fScore = Math.round(totalFinalScore / Math.max(1, questions.length));
+      // TES = Delta Score * Coverage Factor (capped at 100)
+      const delta = Math.max(0, fScore - baselineScore);
+      const coverage = taughtConcepts.length > 0 ? Math.min(1.0, taughtConcepts.length / Math.max(1, questions.length)) : 0.85;
+      const computedTes = Math.round(delta * coverage + 10);
 
       setFinalScore(fScore);
       setTesScore(computedTes);
-      setExamResults(details);
+      setExamResults(results);
 
       // Mark completed in DB
       if (sessionId && isAuthenticated) {
-        await axios.post('/api/sessions/complete', {
-          session_id: sessionId,
-          final_score: fScore,
-          tes_score: computedTes
-        });
+        try {
+          await axios.post('/api/sessions/complete', {
+            session_id: sessionId,
+            baseline_score: baselineScore,
+            final_score: fScore,
+            tes_score: computedTes
+          });
+        } catch (e) {
+          console.warn("Failed to mark session complete in DB:", e);
+        }
       }
 
       setStep(4);
@@ -272,99 +328,94 @@ export const StudyTool: React.FC<StudyToolProps> = ({
 
   return (
     <div
-      className={`min-h-screen font-sans pb-24 transition-colors duration-300 relative ${
-        isDark ? 'bg-[#0a0f12] text-zinc-100' : 'bg-[#faf8f5] text-[#12181a]'
+      className={`${
+        isEmbedded ? 'w-full pb-12 relative' : 'min-h-screen font-sans pb-24 relative'
+      } transition-colors duration-300 ${
+        isEmbedded ? '' : isDark ? 'bg-[#0a0f12] text-zinc-100' : 'bg-[#faf8f5] text-[#12181a]'
       }`}
     >
       {/* ========================================================= */}
-      {/* TOP NAVBAR (Cohesive with Study Buddy site)               */}
+      {/* TOP NAVBAR (Rendered when standalone or embedded indicator)*/}
       {/* ========================================================= */}
-      <header
-        className={`sticky top-0 z-40 border-b backdrop-blur-md transition-colors ${
-          isDark
-            ? 'bg-[#0a0f12]/90 border-zinc-800/80 text-white'
-            : 'bg-[#faf8f5]/90 border-[#eae6dc] text-[#12181a]'
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={onBack}
-              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
-                isDark
-                  ? 'border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300'
-                  : 'border-[#eae6dc] bg-white hover:bg-[#f4f2ea] text-[#0f3238] shadow-xs'
-              }`}
-            >
-              <ChevronLeft className="w-4 h-4 text-[#c2983b]" />
-              <span>Back</span>
-            </button>
-
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-[#0f3238] flex items-center justify-center text-[#c2983b] shadow-xs">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-4 h-4"
-                >
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                </svg>
-              </div>
-              <div className="flex items-center">
-                <span className={`font-bold text-base tracking-tight font-serif ${isDark ? 'text-white' : 'text-[#0f3238]'}`}>
-                  Study Buddy
-                </span>
-                {sessionTitle && (
-                  <span
-                    className={`hidden sm:inline-block text-xs ml-3 px-2.5 py-0.5 rounded-md font-medium border truncate max-w-[220px] ${
-                      isDark
-                        ? 'bg-zinc-900 border-zinc-800 text-zinc-300'
-                        : 'bg-[#f4f2ea] border-[#eae6dc] text-[#0f3238]'
-                    }`}
-                  >
-                    {sessionTitle}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-
-            {isAuthenticated ? (
+      {!isEmbedded && (
+        <header
+          className={`sticky top-0 z-40 border-b backdrop-blur-md transition-colors ${
+            isDark
+              ? 'bg-[#0a0f12]/90 border-zinc-800/80 text-white'
+              : 'bg-[#faf8f5]/90 border-[#eae6dc] text-[#12181a]'
+          }`}
+        >
+          <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div className="flex items-center gap-4">
               <button
-                onClick={onGoToDashboard}
-                className={`flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-xl border transition-all cursor-pointer ${
+                onClick={onBack}
+                className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
                   isDark
-                    ? 'border-zinc-800 hover:bg-zinc-800 text-zinc-300'
+                    ? 'border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300'
                     : 'border-[#eae6dc] bg-white hover:bg-[#f4f2ea] text-[#0f3238] shadow-xs'
                 }`}
               >
-                <LayoutDashboard className="w-3.5 h-3.5 text-[#c2983b]" />
-                <span>Dashboard</span>
+                <ChevronLeft className="w-4 h-4 text-[#c2983b]" />
+                <span>Back</span>
               </button>
-            ) : (
-              <button
-                onClick={onOpenAuth}
-                className="text-xs font-semibold px-4 py-2 rounded-xl bg-[#0f3238] hover:bg-[#163b40] text-white shadow-xs cursor-pointer flex items-center gap-1.5"
-              >
-                <span>Sign In to Save</span>
-              </button>
-            )}
+
+              <div className="flex items-center gap-2.5">
+                <img
+                  src="/brand/study-buddy-icon.svg"
+                  alt="Study Buddy"
+                  className="w-8 h-8 rounded-xl object-contain shadow-xs"
+                />
+                <div className="flex items-center">
+                  <span className={`font-bold text-base tracking-tight font-serif ${isDark ? 'text-white' : 'text-[#0f3238]'}`}>
+                    Study Buddy
+                  </span>
+                  {sessionTitle && (
+                    <span
+                      className={`hidden sm:inline-block text-xs ml-3 px-2.5 py-0.5 rounded-md font-medium border truncate max-w-[220px] ${
+                        isDark
+                          ? 'bg-zinc-900 border-zinc-800 text-zinc-300'
+                          : 'bg-[#f4f2ea] border-[#eae6dc] text-[#0f3238]'
+                      }`}
+                    >
+                      {sessionTitle}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
+
+              {isAuthenticated ? (
+                <button
+                  onClick={onGoToDashboard}
+                  className={`flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-xl border transition-all cursor-pointer ${
+                    isDark
+                      ? 'border-zinc-800 hover:bg-zinc-800 text-zinc-300'
+                      : 'border-[#eae6dc] bg-white hover:bg-[#f4f2ea] text-[#0f3238] shadow-xs'
+                  }`}
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5 text-[#c2983b]" />
+                  <span>Dashboard</span>
+                </button>
+              ) : (
+                <button
+                  onClick={onOpenAuth}
+                  className="text-xs font-semibold px-4 py-2 rounded-xl bg-[#0f3238] hover:bg-[#163b40] text-white shadow-xs cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>Sign In to Save</span>
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* ========================================================= */}
       {/* MAIN CONTAINER                                            */}
       {/* ========================================================= */}
-      <main className="max-w-5xl mx-auto px-6 pt-8">
+      <main className={`${isEmbedded ? 'w-full' : 'max-w-5xl mx-auto px-6 pt-8'}`}>
         {/* Step Progress Indicator Bar */}
         <div
           className={`p-3 rounded-2xl border mb-8 transition-all ${

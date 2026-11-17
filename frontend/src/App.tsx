@@ -61,6 +61,7 @@ function MainRouter() {
             await logout();
             setView('landing');
           }}
+          onGoToLanding={() => setView('landing')}
         />
       )}
 
