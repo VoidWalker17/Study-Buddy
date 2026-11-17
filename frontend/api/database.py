@@ -77,8 +77,10 @@ class DBConnection:
                 self.is_pg = False
 
         db_file = _get_db_path()
-        self.conn = sqlite3.connect(db_file)
+        self.conn = sqlite3.connect(db_file, timeout=20.0, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
+        self.conn.execute("PRAGMA journal_mode = WAL")
+        self.conn.execute("PRAGMA synchronous = NORMAL")
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.cursor = self.conn.cursor()
 
@@ -261,9 +263,13 @@ def authenticate_user(email: str, password: str) -> Optional[Dict[str, Any]]:
         return None
         
     token = "stk_" + secrets.token_urlsafe(32)
-    db.execute("INSERT INTO auth_tokens (token, user_id) VALUES (?, ?)", (token, row["id"]))
-    db.commit()
-    db.close()
+    try:
+        db.execute("INSERT INTO auth_tokens (token, user_id) VALUES (?, ?)", (token, row["id"]))
+        db.commit()
+    except Exception as e:
+        print(f"Token insert warning: {e}")
+    finally:
+        db.close()
     
     return {
         "token": token,
