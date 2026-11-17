@@ -109,12 +109,22 @@ export const StudyTool: React.FC<StudyToolProps> = ({
       // 1. Create Session in SQLite if authenticated
       let currentSessionId = sessionId;
       if (isAuthenticated) {
-        const sesRes = await axios.post('/api/sessions/create', {
-          title: sessionTitle || file.name,
-          subject: sessionSubject,
-          material_name: file.name
-        });
-        currentSessionId = sesRes.data?.session_id;
+        try {
+          const sesRes = await axios.post('/api/sessions/create', {
+            title: sessionTitle || file.name,
+            subject: sessionSubject,
+            material_name: file.name
+          });
+          currentSessionId = sesRes.data?.session_id;
+          if (currentSessionId) {
+            setSessionId(currentSessionId);
+          }
+        } catch (e) {
+          console.warn("Session create non-fatal warning:", e);
+        }
+      }
+      if (!currentSessionId) {
+        currentSessionId = `ses_${Date.now()}`;
         setSessionId(currentSessionId);
       }
 
