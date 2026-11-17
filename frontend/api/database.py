@@ -37,30 +37,44 @@ if USE_POSTGRES:
 else:
     print("Database Mode: Local SQLite")
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "studybuddy.db")
+DB_PATH = os.environ.get("/tmp/studybuddy.db") if os.environ.get("VERCEL") else os.path.join(os.path.dirname(__file__), "studybuddy.db")
+if os.environ.get("VERCEL") and not os.path.exists("/tmp/studybuddy.db"):
+    orig = os.path.join(os.path.dirname(__file__), "studybuddy.db")
+    if os.path.exists(orig):
+        import shutil
+        try:
+            shutil.copy2(orig, "/tmp/studybuddy.db")
+        except Exception:
+            pass
+    DB_PATH = "/tmp/studybuddy.db"
 
 class DBConnection:
     """Unified wrapper around psycopg2 (Supabase) and sqlite3."""
     def __init__(self):
         self.is_pg = USE_POSTGRES
         if self.is_pg:
-            if SUPABASE_HOST:
-                self.conn = psycopg2.connect(
-                    host=SUPABASE_HOST,
-                    port=5432,
-                    user=SUPABASE_USER,
-                    password=SUPABASE_PASS,
-                    dbname=SUPABASE_DB,
-                    connect_timeout=8
-                )
-            else:
-                self.conn = psycopg2.connect(DATABASE_URL, connect_timeout=8)
-            self.cursor = self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        else:
-            self.conn = sqlite3.connect(DB_PATH)
-            self.conn.row_factory = sqlite3.Row
-            self.conn.execute("PRAGMA foreign_keys = ON")
-            self.cursor = self.conn.cursor()
+            try:
+                if SUPABASE_HOST:
+                    self.conn = psycopg2.connect(
+                        host=SUPABASE_HOST,
+                        port=5432,
+                        user=SUPABASE_USER,
+                        password=SUPABASE_PASS,
+                        dbname=SUPABASE_DB,
+                        connect_timeout=8
+                    )
+                else:
+                    self.conn = psycopg2.connect(DATABASE_URL, connect_timeout=8)
+                self.cursor = self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+                return
+            except Exception as e:
+                print(f"Warning: Supabase PostgreSQL connect failed ({e}), falling back to local DB.")
+                self.is_pg = False
+
+        self.conn = sqlite3.connect(DB_PATH)
+        self.conn.row_factory = sqlite3.Row
+        self.conn.execute("PRAGMA foreign_keys = ON")
+        self.cursor = self.conn.cursor()
 
     def execute(self, sql: str, params: tuple = ()):
         if self.is_pg:
