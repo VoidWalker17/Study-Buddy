@@ -441,9 +441,11 @@ export const StudyTool: React.FC<StudyToolProps> = ({
               { num: 3, label: 'Teach Child AI' },
               { num: 4, label: 'Mastery & TES' }
             ].map((s) => (
-              <div
+              <button
                 key={s.num}
-                className={`py-2 px-2 rounded-xl transition-all flex flex-col items-center gap-1 ${
+                type="button"
+                onClick={() => setStep(s.num)}
+                className={`py-2 px-2 rounded-xl transition-all flex flex-col items-center gap-1 cursor-pointer ${
                   step === s.num
                     ? isDark
                       ? 'bg-zinc-800 text-[#c2983b] font-bold border border-[#c2983b]/30'
@@ -453,8 +455,8 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                       ? 'text-emerald-400 font-semibold bg-emerald-950/20'
                       : 'text-emerald-700 font-semibold bg-emerald-50'
                     : isDark
-                    ? 'text-zinc-600'
-                    : 'text-[#9ca3af]'
+                    ? 'text-zinc-600 hover:text-zinc-400'
+                    : 'text-[#9ca3af] hover:text-[#4b5563]'
                 }`}
               >
                 <div className="flex items-center gap-1.5 text-xs">
@@ -471,7 +473,7 @@ export const StudyTool: React.FC<StudyToolProps> = ({
                   )}
                   <span className="hidden sm:inline text-xs">{s.label}</span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
