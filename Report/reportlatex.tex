@@ -1,0 +1,1161 @@
+\documentclass{tietreport}
+\let\cleardoublepage\clearpage
+\setlength{\headheight}{14.5pt}
+
+% Import images
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{array}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{placeins}
+\usepackage{needspace}
+
+% Bibliography configuration
+\usepackage[
+  date=year,
+  style=alphabetic,
+  backend=biber,
+  sorting=nty,
+  maxnames=5,
+  minnames=3,
+  maxalphanames=4,
+  minalphanames=3,
+  backref=true,
+  doi=false,
+  isbn=false,
+  url=false,
+  eprint=false
+]{biblatex}
+\addbibresource{references.bib}
+
+%% ==================================================
+%% CUSTOMIZE THESE FIELDS FOR YOUR PROJECT
+%% ==================================================
+
+% Course/Lab header
+\TitlePageHeader{%
+ Course Code - UCS503%
+}
+
+% Main project title
+\ProjectTitle{%
+  Study Buddy%
+}
+
+% Subtitle or project description
+\ProjectSubTitle{%
+  An Adaptive Learning System for Personalized Student Assessment and Topic-Based Practice%
+}
+
+% Student information (up to 4 students)
+\author{%
+  \texttt{1024030514} Vansh Arora \\
+  \texttt{1024030523} Divyansh Agarwal \\
+  \texttt{1024030526} Mudit Agarwal%
+}
+
+% Group number, degree, year, program
+\TitlePageSubText{%
+  Group: \texttt{3C34} BE Third Year, CSE%
+}
+
+% Faculty advisor/guide name
+\AdvisorName{%
+  Ms. Nisha Thakur%
+}
+
+% Evaluation period and department info
+\TitlePageFooterText{{%
+    \large End-Semester Evaluation \\[0.2cm]
+    \bfseries Computer Science and Engineering
+    Department%
+  } \\[0.15cm]
+  Thapar Institute of Engineering and Technology,
+  Patiala%
+}
+
+%% ==================================================
+
+\begin{document}
+
+% Generate title page
+\maketitle
+
+% Table of contents (auto-generated from chapters)
+\tableofcontents
+
+
+\addcontentsline{toc}{chapter}{List of Figures}
+\listoffigures
+
+% ===== CHAPTER 1: INTRODUCTION =====
+
+\chapter{Introduction}
+
+\section{Background and Context}
+
+Traditional learning platforms generally place the AI in the role of a tutor, where it explains concepts and provides answers. Study Buddy takes a different approach based on the Feynman Technique, where the student learns by explaining concepts to someone else.
+
+Study Buddy uses two AI agents: a Teacher Agent and a Child Agent. The Teacher Agent has access to the study material uploaded by the student and acts as the reference for evaluation. The Child Agent does not have direct access to this material. Instead, the student teaches the Child Agent through an interactive session.
+
+The information provided during the teaching session is converted into structured memory, which becomes the Child Agent's knowledge for the final assessment. The Teacher Agent then generates a test from the original material, and the Child Agent attempts it using only its learned memory. This allows the system to measure how effectively the student was able to teach the topic.
+
+\subsection{Problem Statement}
+
+Most educational AI systems focus on helping students learn through explanations and direct answers. They do not provide a reliable way to determine whether a student has actually understood a concept well enough to explain it.
+
+Another challenge is that general-purpose AI models already possess large amounts of pretrained knowledge. Therefore, simply asking an AI to answer questions after a teaching session cannot reliably show whether it learned from the student.
+
+Study Buddy addresses this problem by isolating the Child Agent from the original study material and evaluating it after the student teaches it.The proposed prototype focuses on:
+\begin{enumerate}
+\item Uploading study material for the Teacher Agent.
+\item Conducting a cold baseline test of the Child Agent.
+\item Allowing the student to teach the Child Agent.
+\item Converting the teaching session into structured memory.
+\item Generating a closed-book test from the original material.
+\item Evaluating the Child Agent's performance using the Teacher Agent.
+\end{enumerate}
+
+
+
+\section{Project Objectives}
+The principal objectives of the Study Buddy project are:
+
+\begin{enumerate}
+\item \textbf{Develop a Dual-Agent System:} Create separate Teacher and Child Agents with different roles and controlled access to information.
+
+\item \textbf{Enable Learning Through Teaching:} Allow students to explain study material to the Child Agent, following the basic idea of the Feynman Technique.
+
+\item \textbf{Construct Structured Memory:} Extract important concepts and relationships from the teaching session and store them as the Child Agent's learning memory.
+
+\item \textbf{Maintain Knowledge Isolation:} Prevent the Child Agent from directly accessing the original study material so that its performance reflects the information received through teaching.
+
+\item \textbf{Automate Assessment:} Enable the Teacher Agent to generate an examination from the uploaded material and evaluate the Child Agent's answers.
+
+\item \textbf{Measure Teaching Effectiveness:} Compare the Child Agent's performance with its baseline assessment to provide a measurable indication of how effectively the student taught the topic.
+
+\end{enumerate}
+
+
+
+% ===== CHAPTER 2: METHODOLOGY & DESIGN =====
+
+\chapter{Methodology and Design}
+
+\section{System Architecture}
+
+Study Buddy follows a dual-agent architecture consisting of the Teacher Agent, Child Agent, and a Memory and Learning Engine.
+
+The process begins when the student uploads study material. The Teacher Agent processes this material and uses it as the ground truth. Before teaching begins, the Child Agent takes a cold baseline test to measure its initial knowledge.
+
+The student then teaches the Child Agent through either a text-based interaction or a voice-based interaction. The Memory and Learning Engine extracts important concepts and relationships from this conversation and stores them as structured memory. The original study material remains inaccessible to the Child Agent.
+
+After the teaching session, the Teacher Agent generates an examination from the uploaded material. The Child Agent attempts this test using only its structured memory. Finally, the Teacher Agent evaluates the answers and produces a score that indicates how effectively the student taught the topic.
+
+The overall workflow is:
+
+Upload Material → Teacher Agent → Cold Baseline → Student Teaches Child Agent → Memory Construction → Closed-Book Test → Teacher Agent Evaluation → Score
+
+The separation between the two agents helps reduce pretrained knowledge leakage and makes the assessment more closely connected to what the student taught.
+
+\subsection{High-Level Design}
+
+The high-level design of Study Buddy is represented using the following diagrams. 
+These diagrams illustrate the workflow of the system, the interaction between 
+the student and AI agents, and the major components involved in the learning process.
+\subsubsection{Activity Diagram}
+
+The activity diagram illustrates the complete learning workflow, beginning with 
+material upload and ending with the evaluation of the Child Agent.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{activitydiagramwhite.jpg}
+    \caption{Activity Diagram of Study Buddy}
+    \label{fig:activity}
+\end{figure}
+
+\subsubsection{Swimlane Diagram}
+
+The swimlane diagram shows how the main activities of Study Buddy are divided among the student, Teacher Agent, Child Agent, and system components.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{swimlanewhitediagram.png}
+    \caption{Swimlane Diagram of Study Buddy}
+    \label{fig:swimlane}
+\end{figure}
+
+\subsubsection{Data Flow Diagram -- Level 0}
+
+The Level 0 DFD provides a high-level view of the information exchanged between the user and the Study Buddy system.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Study_Buddy_DFD_Level_0_Black_White.png}
+    \caption{Level 0 Data Flow Diagram of Study Buddy}
+    \label{fig:dfd0}
+\end{figure}
+
+\subsubsection{Data Flow Diagram -- Level 1}
+
+The Level 1 DFD breaks the system into its major processes and shows how information moves between the different components.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{Study_Buddy_DFD_Level_1_Black_White.png}
+    \caption{Level 1 Data Flow Diagram of Study Buddy}
+    \label{fig:dfd1}
+\end{figure}
+
+\subsubsection{Data Flow Diagram -- Level 2}
+
+The Level 2 DFD provides a more detailed representation of the internal processes and data flows within Study Buddy.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{dfdl2white.jpg}
+    \caption{Level 2 Data Flow Diagram of Study Buddy}
+    \label{fig:dfd2}
+\end{figure}
+
+\subsubsection{Sequence Diagram}
+
+The sequence diagram represents the order of interactions between the student, Teacher Agent, Child Agent, and other system components during the learning process.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.05\textwidth]{sequencewhite.jpg}
+    \caption{Sequence Diagram of Study Buddy}
+    \label{fig:sequence}
+\end{figure}
+
+\subsubsection{Class Diagram}
+
+The class diagram represents the main classes of Study Buddy and the relationships between the different entities involved in the system.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{CLASSWHITE.jpg}
+    \caption{Class Diagram of Study Buddy}
+    \label{fig:class}
+\end{figure}
+
+\subsubsection{Component Diagram}
+
+The component diagram illustrates the major software components of Study Buddy and their interactions within the overall system architecture.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{componentwhite.jpg}
+    \caption{Component Diagram of Study Buddy}
+    \label{fig:component}
+\end{figure}
+
+\subsubsection{Collaboration Diagram}
+
+The collaboration diagram illustrates the interactions and communication between the student, Teacher Agent, Child Agent, and other system components during the learning and assessment process.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{collaborationwhite.jpg}
+    \caption{Collaboration Diagram of Study Buddy}
+    \label{fig:collaboration}
+\end{figure}
+
+\subsubsection{Deployment Diagram}
+
+The deployment diagram illustrates the physical deployment architecture of Study Buddy, showing the hardware devices, application server, database server, external AI services, and network connections required for the system to operate.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{Study_Buddy_UML_Deployment_Diagram_Black_White.png}
+    \caption{Deployment Diagram of Study Buddy}
+    \label{fig:deployment}
+\end{figure}
+
+\subsubsection{Use Case Diagram}
+
+The use case diagram represents the main interactions between the student and the different components of the Study Buddy system.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1\textwidth]{Study_Buddy_Use_Case_Diagram_Black_White_Fixed.png}
+    \caption{Use Case Diagram of Study Buddy}
+    \label{fig:usecase}
+\end{figure}
+
+\subsubsection{Use Case Template}
+
+The use case templates provide detailed descriptions of the major interactions within the Study Buddy system, including the conditions and steps involved in each interaction.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{Study_Buddy_Use_Case_Template_Page_1_Black_White.png}
+    \caption{Use Case Template -- Material Upload}
+    \label{fig:uctemplate1}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{Study_Buddy_Use_Case_Template_Page_2_Black_White.png}
+    \caption{Use Case Template -- Cold Baseline Evaluation}
+    \label{fig:uctemplate2}
+\end{figure}
+
+\subsection{Technical Stack}
+
+The Study Buddy application is developed using a modern
+technology stack consisting of frontend frameworks, backend
+services, AI inference providers, document-processing
+libraries, and database technologies.
+
+\begin{itemize}
+
+    \item \textbf{Frontend Framework/Language:}
+    React 19 with TypeScript and Vite for building a
+    component-based, responsive, and type-safe frontend.
+
+    \item \textbf{Backend Framework:}
+    Python 3.13 with FastAPI and Uvicorn for developing
+    asynchronous REST APIs and handling backend requests.
+
+    \item \textbf{Database:}
+    SQLite in WAL mode for local data persistence and
+    PostgreSQL/Supabase for storing user accounts, session
+    details, assessment results, and analytics.
+
+    \item \textbf{AI Models:}
+    Groq Cloud API with OpenAI GPT-OSS 120B as the Teacher
+    Agent for question generation and answer evaluation,
+    and GPT-OSS 20B as the Child Agent for learner-side
+    reasoning using teaching-derived memory.
+
+    \item \textbf{Voice and Audio:}
+    Groq Whisper Large v3 Turbo for voice transcription,
+    with the browser Web Speech API as a fallback for
+    voice-based interaction.
+
+    \item \textbf{Local AI Inference:}
+    Ollama with Llama 3.1 (8B) for running the AI model
+    locally when cloud inference services are unavailable
+    and the student's hardware supports it.
+
+    \item \textbf{Document Processing:}
+    PyMuPDF and PyPDF2 for PDF text extraction,
+    document processing, and text chunking.
+
+    \item \textbf{Styling and Animations:}
+    Tailwind CSS v4 for responsive styling, GSAP and
+    Framer Motion for animations and transitions, and
+    Lenis for smooth scrolling.
+
+    \item \textbf{Icons and Branding:}
+    Lucide React for interface icons along with
+    custom logos, favicons, and brand assets.
+
+    \item \textbf{Authentication:}
+    Stateless signed tokens using HMAC-SHA256 for
+    authentication and secure token verification.
+
+    \item \textbf{Deployment:}
+    Vercel Serverless Functions for deploying the
+    frontend and backend application.
+
+    \item \textbf{Academic Exports:}
+    jsPDF and jsPDF-AutoTable for generating printable
+    session reports and academic certificates.
+
+\end{itemize}
+
+\section{Implementation Details}
+
+The Study Buddy application is developed to help students
+understand and revise their study material by teaching
+an AI-based learner. The application follows the Feynman
+Technique, where students explain a topic in their own
+words and the system checks how well the concepts have
+been understood.
+
+The main implementation is based on two AI agents,
+namely the Teacher Agent and the Child Agent, along with
+a Memory and Learning Engine. The complete process
+starts with uploading study material and ends with the
+evaluation of the Child Agent after the teaching session.
+The implementation is divided into the following modules.
+
+\subsection{Module 1: Core Functionality}
+
+\begin{itemize}
+
+    \item \textbf{User Authentication:}
+    The application provides a login and registration
+    system through which students can access their
+    accounts. Authentication is handled using
+    stateless signed tokens based on HMAC-SHA256.
+    These tokens are verified by the backend before
+    allowing access to protected features.
+
+    \item \textbf{Study Material Upload and Processing:}
+    After logging in, students can upload their study
+    material in PDF format. The uploaded files are
+    processed using PyMuPDF and PyPDF2 to extract
+    their textual content. The extracted text is then
+    cleaned and divided into smaller chunks so that
+    it can be processed efficiently by the AI models.
+    This material is used by the Teacher Agent as the
+    reference for preparing questions and evaluating
+    answers.
+
+    \item \textbf{Teacher Agent:}
+    The Teacher Agent is responsible for handling the
+    uploaded study material. It uses the GPT-OSS 120B
+    model through the Groq Cloud API. It prepares the
+    baseline assessment, generates questions for the
+    final examination and checks the answers submitted
+    by the Child Agent. The original study material
+    remains available to this agent so that the
+    evaluation is based on the uploaded content.
+
+    \item \textbf{Child Agent:}
+    The Child Agent acts as a student who learns from
+    the explanations provided by the actual user.
+    It uses the GPT-OSS 20B model through the Groq
+    Cloud API. Unlike the Teacher Agent, it is not
+    given direct access to the uploaded study material
+    during the final assessment. It uses the knowledge
+    collected from the student's teaching session
+    to answer the questions.
+
+    \item \textbf{Student Teaching Session:}
+    Once the initial assessment is completed, the
+    student starts teaching the Child Agent. The
+    application provides two modes of interaction:
+    text and voice. In text mode, students can type
+    their explanations, while in voice mode, their
+    speech is converted into text using Groq Whisper
+    Large v3 Turbo. The browser Web Speech API is
+    also available as a fallback where supported.
+    The Child Agent can ask questions during the
+    interaction so that students can explain the
+    topic more clearly.
+
+    \item \textbf{Memory and Learning Engine:}
+    During the teaching session, the Memory and
+    Learning Engine extracts important information
+    from the student's explanations. It organizes
+    this information into structured memory nodes
+    containing concepts, definitions and their
+    relationships. The structured knowledge is then
+    used to update the Child Agent's memory. The
+    raw conversation is discarded after the required
+    information has been extracted, while the
+    structured knowledge is retained for the
+    assessment.
+
+    \item \textbf{Baseline and Final Assessment:}
+    Before the teaching session, the Child Agent
+    attempts a baseline assessment prepared by
+    the Teacher Agent. This helps determine how
+    much the Child Agent can answer before learning
+    from the student. After the teaching session,
+    the Teacher Agent generates a final examination
+    consisting of ten questions based on the uploaded
+    material. The Child Agent attempts these
+    questions using its structured memory. Its
+    answers are then sent to the Teacher Agent
+    for evaluation against the original study
+    material. The baseline and final results are
+    compared to calculate the Teaching Efficacy
+    Score.
+
+\end{itemize}
+
+
+
+\subsection{Module 2: Secondary Features}
+
+\begin{itemize}
+
+    \item \textbf{Student Dashboard:}
+    After completing a teaching and assessment
+    session, students are taken to the dashboard.
+    It displays the session results, assessment
+    scores and Teaching Efficacy Score. This helps
+    students review the performance of the Child
+    Agent and understand how it performed after
+    the teaching session.
+
+    \item \textbf{Session History and Database:}
+    The application maintains records of user
+    accounts, completed sessions and assessment
+    results. SQLite in WAL mode and
+    PostgreSQL/Supabase are used for data
+    persistence. Students can access their
+    previous sessions and review their learning
+    activity.
+
+    \item \textbf{Offline AI Support:}
+    The application also includes an offline
+    inference option using Ollama with the
+    Llama 3.1 (8B) model. This provides an
+    alternative when cloud-based AI services
+    are unavailable. The feature depends on
+    the availability of the local model and
+    the processing capacity of the student's
+    device.
+
+    \item \textbf{Academic Reports and Certificates:}
+    Study Buddy allows students to generate
+    downloadable reports and certificate-style
+    summaries of their completed sessions.
+    These documents are generated using jsPDF
+    and jsPDF-AutoTable and contain relevant
+    session and assessment information.
+
+    \item \textbf{Application Deployment:}
+    The frontend and backend are maintained
+    within a common project repository.
+    React, TypeScript and Vite are used for
+    the frontend, while FastAPI handles the
+    backend operations. The application is
+    deployed using Vercel Serverless Functions,
+    and Groq Cloud API is used for remote
+    AI model inference.
+
+\end{itemize}
+
+% ===== CHAPTER 3: RESULTS & EVALUATION =====
+
+\chapter{Results and Evaluation}
+
+\section{Testing Methodology}
+
+Testing was carried out to check whether the different
+features of Study Buddy were working as expected.
+The main focus was on checking the complete learning
+process, starting from user login and study material
+upload to teaching the Child Agent and viewing the
+final assessment results.
+
+Each major feature was checked separately, followed
+by testing the complete workflow to make sure that
+the different components were working together
+properly. The testing mainly covered the following
+areas:
+
+\begin{itemize}
+
+    \item \textbf{User Authentication:}
+    Checking whether students can register, log in,
+    and access their accounts successfully.
+
+    \item \textbf{Study Material Processing:}
+    Checking whether PDF files can be uploaded and
+    their contents are extracted correctly.
+
+    \item \textbf{AI Agent Interaction:}
+    Checking the communication between the Teacher
+    Agent and Child Agent during the learning process.
+
+    \item \textbf{Teaching and Memory Creation:}
+    Checking whether text and voice explanations
+    are processed and converted into structured
+    memory for the Child Agent.
+
+    \item \textbf{Assessment and Evaluation:}
+    Checking whether the baseline and final
+    assessments are generated and evaluated
+    correctly.
+
+    \item \textbf{Dashboard and Reports:}
+    Checking whether session results are displayed
+    after completion and whether academic reports
+    can be generated.
+
+\end{itemize}
+
+\section{Test Case Results}
+
+The following test cases were performed to verify
+the major functionalities of the Study Buddy
+application. Each test case focuses on a particular
+feature and checks whether the expected output
+is obtained.
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.4}
+\setlength{\tabcolsep}{4pt}
+
+\begin{tabular}{|
+p{0.8cm}|
+p{3.1cm}|
+p{5.1cm}|
+p{5.1cm}|}
+\hline
+
+\textbf{ID} &
+\textbf{Test Scenario} &
+\textbf{Expected Result} &
+\textbf{Actual Result} \\
+\hline
+
+TC-01 &
+User Registration and Login &
+The student should be able to create an account and log in successfully. &
+The authentication process was completed successfully. \\
+\hline
+
+TC-02 &
+PDF Upload &
+The system should accept the uploaded PDF file. &
+The study material was uploaded successfully. \\
+\hline
+
+TC-03 &
+PDF Processing &
+The system should extract the textual content from the uploaded document. &
+The document content was processed for use by the Teacher Agent. \\
+\hline
+
+TC-04 &
+Baseline Assessment &
+The Teacher Agent should generate questions and record the Child Agent's initial performance. &
+The baseline assessment workflow was executed and the result was recorded. \\
+\hline
+
+TC-05 &
+Text-Based Teaching &
+The student should be able to explain concepts through text interaction. &
+The text teaching interaction worked as expected. \\
+\hline
+
+TC-06 &
+Voice-Based Teaching &
+The system should convert spoken explanations into text. &
+Voice input was processed through the configured speech recognition service. \\
+\hline
+
+TC-07 &
+Memory Construction &
+The system should extract concepts from the teaching interaction and update the Child Agent's memory. &
+Structured knowledge was generated from the teaching interaction. \\
+\hline
+
+TC-08 &
+Final Assessment &
+The Child Agent should attempt the questions using its teaching-derived memory. &
+The final assessment workflow was executed successfully. \\
+\hline
+
+TC-09 &
+Answer Evaluation &
+The Teacher Agent should evaluate the answers and calculate the assessment result. &
+The answers were evaluated and the results were generated. \\
+\hline
+
+TC-10 &
+Dashboard and Reports &
+The system should display completed session results and provide academic exports. &
+The session results and report generation features were checked. \\
+\hline
+
+\end{tabular}
+
+\caption{Functional Test Cases of Study Buddy}
+\label{tab:test-cases}
+\end{table}
+
+\section{Performance Metrics}
+
+The performance of Study Buddy is mainly evaluated
+by comparing the Child Agent's performance before
+and after the teaching session. The baseline
+assessment provides an initial score, while the
+final assessment shows how the Child Agent performs
+after receiving the student's explanations.
+
+The following metrics are considered for evaluating
+the system:
+
+\begin{itemize}
+
+    \item \textbf{Baseline Score:}
+    Represents the score obtained by the Child Agent
+    before the student starts teaching. It helps
+    identify the knowledge already demonstrated
+    by the agent.
+
+    \item \textbf{Post-Teaching Score:}
+    Represents the score obtained by the Child Agent
+    in the final assessment after the teaching
+    session has been completed.
+
+    \item \textbf{Score Improvement:}
+    It represents the difference between the
+    post-teaching score and the baseline score.
+    It helps in understanding whether the
+    teaching session improved the Child Agent's
+    assessment performance.
+
+    \item \textbf{Question-Level Evaluation:}
+    Each answer submitted by the Child Agent is
+    evaluated by the Teacher Agent against the
+    uploaded study material. This helps determine
+    how accurately the agent has answered the
+    questions.
+
+    \item \textbf{Session Completion:}
+    The system is also checked for its ability
+    to complete the entire learning process,
+    including material upload, teaching,
+    memory construction, assessment and
+    result generation.
+
+\end{itemize}
+
+The score improvement can be represented using
+the following formula:
+
+\begin{equation}
+\text{Score Improvement} =
+\text{Post-Teaching Score} -
+\text{Baseline Score}
+\end{equation}
+
+A positive value indicates an improvement in the
+Child Agent's performance after the teaching
+session, while a negative value indicates a
+decrease in its performance.
+
+\section{Analysis}
+
+The testing of Study Buddy helped in checking
+the working of its major features and the
+interaction between different components.
+The application follows a complete learning
+process in which students first upload their
+study material, teach the Child Agent and
+then review its performance through the
+final assessment.
+
+The dual-agent architecture helps in keeping
+the responsibilities of both agents separate.
+The Teacher Agent uses the uploaded material
+for preparing questions and evaluating answers,
+whereas the Child Agent uses the knowledge
+obtained from the student's explanations.
+This makes the teaching process more meaningful
+as the Child Agent is required to answer based
+on the structured memory created during the
+session.
+
+The text and voice interaction features provide
+students with different ways of explaining
+concepts. The Memory and Learning Engine
+organizes these explanations into structured
+knowledge, which is later used during the
+final assessment.
+
+The dashboard provides a summary of the
+completed session, allowing students to review
+the assessment results and compare the
+Child Agent's performance before and after
+teaching. The report generation feature
+also helps in maintaining a record of
+completed learning sessions.
+
+Overall, the project brings together document
+processing, AI-based interaction, memory
+construction and assessment within a single
+application. However, the quality of the
+results depends on the clarity of the student's
+explanations, the quality of the extracted
+memory and the accuracy of AI-based answer
+evaluation.
+
+The current implementation provides a
+functional foundation for the proposed
+learning approach. Further testing with
+more students, different study materials
+and repeated learning sessions would help
+in evaluating its effectiveness on a larger
+scale.
+
+\section{Screenshots}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{05_dashboard_overview.png}
+    \caption{Dashboard and Session History}
+    \label{fig:dashboard}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{07_teaching_chamber_step1_setup.png}
+    \caption{Upload Study Material}
+    \label{fig:studymaterial}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{08_teaching_chamber_step2_baseline.png}
+    \caption{Baseline Test}
+    \label{fig:baseline}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{09_teaching_chamber_step3_socratic.png}
+    \caption{Teaching Child Agent}
+    \label{fig:teaching}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{10_teaching_chamber_step4_tes_report.png}
+    \caption{Final Report}
+    \label{fig:report}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{Screenshot 2026-11-23 190545.png}
+    \caption{Test Case Report}
+    \label{fig:tc1}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{Screenshot 2026-11-23 190620.png}
+    \caption{Test Case Report-2}
+    \label{fig:tc2}
+\end{figure}
+
+% ===== CHAPTER 4: CONCLUSION =====
+
+\chapter{Conclusion}
+
+\section{Summary of Work}
+
+The main objective of this project was to develop Study Buddy, an AI-based learning platform that makes self-study more interactive and helps students evaluate their understanding of different topics. The system was designed to allow students to upload their study material, learn through an AI-based teaching process, and assess their knowledge through automated evaluations.
+
+The major objectives of the project were successfully implemented in the application. Students can register and log in, upload PDF study material, and interact with the AI-powered teaching system. The Teacher Agent guides the learning session, while the Child Agent represents the learner's understanding using information gathered during the teaching process.
+
+The system also includes text-based and voice-based interaction, memory generation, baseline and final assessments, and a dashboard for reviewing session performance. The comparison between baseline and post-teaching performance provides an indication of how the learner's understanding has changed during the session.
+
+Apart from the core learning features, the application also supports session history, report generation, and local AI inference through Ollama. Overall, the project brings together document processing, AI agents, learning interaction, and performance evaluation into a single platform.
+
+\section{Key Findings}
+
+During the development and testing of Study Buddy, several important findings were observed.
+
+\begin{itemize}
+
+    \item \textbf{AI-Based Teaching Makes Learning More Interactive:}
+    The use of the Teacher Agent allows students to interact with the system instead of simply reading the uploaded study material. Students can explain concepts in their own words and receive questions and feedback during the learning session.
+
+    \item \textbf{Memory Generation Helps Represent Learner Understanding:}
+    The Child Agent uses information collected during the teaching process to represent the learner's understanding. This approach provides a way to evaluate the information gathered through active teaching rather than relying only on the original study material.
+
+    \item \textbf{Performance Comparison Provides Useful Learning Insights:}
+    Comparing the baseline and final assessment results helps identify changes in the Child Agent's performance after the teaching session. However, this comparison should be treated as an indication of learning progress and not as a direct measurement of the student's actual mastery of a topic.
+
+\end{itemize}
+
+\section{Future Work and Recommendations}
+
+Although the current version of Study Buddy implements the major features of the proposed system, there are several possibilities for further improvement.
+
+\begin{enumerate}
+
+    \item \textbf{Potential Enhancements to the System:}
+    The application can be improved by adding support for more document formats, including DOCX and PPTX. The memory generation process can also be enhanced to capture concepts and relationships more accurately. More personalized recommendations can be provided based on a student's previous sessions and assessment performance.
+
+    \item \textbf{Alternative Approaches:}
+    Different AI models and memory-generation techniques can be explored to improve the quality of explanations, question generation, and answer evaluation. Alternative assessment methods can also be introduced to evaluate conceptual understanding more effectively.
+
+    \item \textbf{Scalability Improvements:}
+    The backend and database architecture can be further optimized to support a larger number of students and simultaneous learning sessions. Improvements in request handling, caching, and database management can help maintain application performance as the number of users increases.
+
+    \item \textbf{Integration with Other Systems:}
+    Study Buddy can be integrated with Learning Management Systems (LMS), college portals, and online classroom platforms. Such integrations could allow students to access their course material and learning progress from a common platform.
+
+    \item \textbf{Real-World Deployment Considerations:}
+    Before deploying the application on a larger scale, it would be useful to conduct testing with students from different academic backgrounds and subjects. Attention should also be given to data privacy, authentication security, AI response reliability, and the cost of using external AI services.
+
+\end{enumerate}
+
+\section{Final Remarks}
+
+Developing Study Buddy provided an opportunity to understand how AI models and software technologies can be combined to solve a practical problem in education. The project involved working with frontend and backend development, database management, document processing, AI integration, and application testing.
+
+One of the important learnings from this project was that building an AI-based application involves more than connecting a model to a user interface. Proper handling of information, interaction between different components, evaluation of responses, and maintaining a consistent user experience are equally important.
+
+Study Buddy is a step towards making self-learning more structured and interactive. While there is still scope for improvement, the current system provides a foundation that can be extended with better personalization, more reliable assessments, and wider integration with educational platforms.
+
+% ===== BIBLIOGRAPHY =====
+
+\clearpage
+\nocite{*}
+\printbibliography[heading=bibintoc]
+
+\end{document}
+\documentclass{tietreport}
+
+% Import images
+\usepackage{graphicx}
+
+% Bibliography configuration
+\usepackage[
+  date=year,
+  style=alphabetic,
+  backend=biber,
+  sorting=nty,
+  maxnames=5,
+  minnames=3,
+  maxalphanames=4,
+  minalphanames=3,
+  backref=true,
+  doi=false,
+  isbn=false,
+  url=false,
+  eprint=false
+]{biblatex}
+\addbibresource{references.bib}
+
+%% ==================================================
+%% CUSTOMIZE THESE FIELDS FOR YOUR PROJECT
+%% ==================================================
+
+% Course/Lab header
+\TitlePageHeader{%
+  Your Course Code - Course Title%
+}
+
+% Main project title
+\ProjectTitle{%
+  Your Project Title Here%
+}
+
+% Subtitle or project description
+\ProjectSubTitle{%
+  A Descriptive Subtitle for Your Work%
+}
+
+% Student information (up to 4 students)
+\author{%
+  \texttt{102XXXXXXX} Student Name One \\
+  \texttt{102XXXXXXX} Student Name Two \\
+  \texttt{102XXXXXXX} Student Name Three \\
+  \texttt{102XXXXXXX} Student Name Four%
+}
+
+% Group number, degree, year, program
+\TitlePageSubText{%
+  Group: \texttt{XXXX} BE Third Year, CSE%
+}
+
+% Faculty advisor/guide name
+\AdvisorName{%
+  Dr. Faculty Member Name%
+}
+
+% Evaluation period and department info
+\TitlePageFooterText{{%
+    \large Mid-Semester Evaluation \\[0.2cm]
+    \bfseries Computer Science and Engineering
+    Department%
+  } \\[0.15cm]
+  Thapar Institute of Engineering and Technology,
+  Patiala%
+}
+
+%% ==================================================
+
+\begin{document}
+
+% Generate title page
+\maketitle
+
+% Table of contents (auto-generated from chapters)
+\tableofcontents
+
+% ===== CHAPTER 1: INTRODUCTION =====
+
+\chapter{Introduction}
+
+\section{Background and Context}
+
+Begin your introduction here. Provide context
+for your project and explain why it matters.
+This section should clearly establish the
+problem or opportunity your project addresses.
+
+\subsection{Problem Statement}
+
+Define the specific problem your project
+tackles. Be precise and provide relevant
+background information that helps readers
+understand the scope and significance.
+
+\section{Project Objectives}
+
+\begin{enumerate}
+  \item \textbf{Objective 1:} State your first
+    specific, measurable objective.
+  \item \textbf{Objective 2:} State your second
+    objective.
+  \item \textbf{Objective 3:} State your third
+    objective.
+\end{enumerate}
+
+Document your SMART objectives (Specific,
+Measurable, Achievable, Relevant, Time-bound)
+clearly for your evaluators.
+
+% ===== CHAPTER 2: METHODOLOGY & DESIGN =====
+
+\chapter{Methodology and Design}
+
+\section{System Architecture}
+
+Describe your overall system design. You can
+reference figures and tables in your document:
+
+\subsection{High-Level Design}
+
+Explain the major components and how they
+interact. This section demonstrates your
+understanding of the problem and your
+solution approach.
+
+\subsection{Technical Stack}
+
+\begin{itemize}
+  \item \textbf{Framework/Language:} List your
+    primary technologies.
+  \item \textbf{Database:} Specify database
+    systems if applicable.
+  \item \textbf{Tools:} List development and
+    testing tools used.
+  \item \textbf{Libraries:} Note key libraries
+    or frameworks.
+\end{itemize}
+
+\section{Implementation Details}
+
+\subsection{Module 1: Core Functionality}
+
+Describe the implementation of your first
+major module. Include technical details about
+algorithms, data structures, or design
+patterns used.
+
+\subsection{Module 2: Secondary Features}
+
+Continue documenting your implementation
+by module, demonstrating the complexity and
+depth of your work.
+
+% ===== CHAPTER 3: RESULTS & EVALUATION =====
+
+\chapter{Results and Evaluation}
+
+\section{Testing Methodology}
+
+Describe your testing strategy:
+
+\begin{itemize}
+  \item \textbf{Unit Testing:} How you tested
+    individual components.
+  \item \textbf{Integration Testing:} How you
+    verified components work together.
+  \item \textbf{Performance Testing:} How you
+    measured system performance.
+  \item \textbf{User Testing:} If applicable,
+    how users evaluated your system.
+\end{itemize}
+
+\section{Performance Metrics}
+
+Present your results clearly with tables and
+figures. For example:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|r|r|}
+  \hline
+  \textbf{Metric} & \textbf{Target} &
+  \textbf{Achieved} \\
+  \hline
+  Response Time & $< 100$ms & $85$ms \\
+  \hline
+  Accuracy & $> 95\%$ & $97.2\%$ \\
+  \hline
+  Throughput & $1000$ req/s & $1250$ req/s \\
+  \hline
+\end{tabular}
+\caption{Performance Results Summary}
+\label{tab:performance}
+\end{table}
+
+\section{Analysis}
+
+Analyze your results:
+
+\begin{itemize}
+  \item Did you meet your objectives?
+  \item Where did you exceed expectations?
+  \item What challenges did you encounter?
+  \item How did you resolve them?
+\end{itemize}
+
+% ===== CHAPTER 4: CONCLUSION =====
+
+\chapter{Conclusion}
+
+\section{Summary of Work}
+
+Summarize what you accomplished. Remind
+readers of your objectives and explain which
+ones you met.
+
+\section{Key Findings}
+
+\begin{itemize}
+  \item \textbf{Finding 1:} State a significant
+    result or insight from your work.
+  \item \textbf{Finding 2:} Describe another
+    important discovery.
+  \item \textbf{Finding 3:} Highlight any
+    unexpected results.
+\end{itemize}
+
+\section{Future Work and Recommendations}
+
+Discuss how others could extend or improve
+your work:
+
+\begin{enumerate}
+  \item Potential enhancements to your system~\cite{latex2e}
+  \item Alternative approaches worth exploring
+  \item Scalability improvements
+  \item Integration with other systems
+  \item Real-world deployment considerations
+\end{enumerate}
+
+\section{Final Remarks}
+
+Conclude with reflections on what you learned
+and the impact of your work.
+
+% ===== BIBLIOGRAPHY =====
+
+% Print bibliography with heading in TOC
+\printbibliography[heading=bibintoc]
+
+\end{document}
